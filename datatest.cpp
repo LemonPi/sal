@@ -1,5 +1,7 @@
 #include <iostream>
-#include "data/matrix.h"
+#include "matrix.h"
+#include "heap.h"
+#include "tree.h"
 
 using namespace std;
 
@@ -22,8 +24,30 @@ void test_pow() {
 		cout << "FAILED...Exponentiation\n";
 	else cout << "PASSED...Exponentiation\n";
 }
+
+void test_heap() {
+	Heap<int> h {3, 4, 6, 5, 1, 8, 11, 12};
+	if (h.is_maxheap()) cout << "PASSED...Heap construction\n";
+	else cout << "FAILED...Heap construction\n";
+}
+
+void test_tree() {
+	sal::Tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	t.print();
+	auto node = t.find(4);
+	if (!node) std::cout << "FAILED...Tree find\n";
+	t.erase(4);
+	t.print();
+	node = t.find(4);
+	if (node) std::cout << "FAILED...Tree insert\n";
+	t.insert(5);
+	t.print();
+}
+
 int main() {
-	Matrix<int> id3 {identity<int>(3)};
-	test_mul();
-	test_pow();
+	// Matrix<int> id3 {identity<int>(3)};
+	// test_mul();
+	// test_pow();
+	// test_heap();
+	test_tree();
 }

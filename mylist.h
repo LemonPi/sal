@@ -19,7 +19,7 @@ public:
 	Mylist(T d) : head{new Node<T>(d)} {}
 	Mylist(initializer_list<T>);
 
-	T kth_last(size_t k);
+	Node<T>& kth_last(size_t k);
 
 	void append(T d);
 	void append_node(Node<T>* node);
@@ -43,19 +43,22 @@ Mylist<T>::Mylist(initializer_list<T> l) : head{new Node<T>(*l.begin())} {
 }
 
 template <typename T>
-T Mylist<T>::kth_last(size_t k) {
+Node<T>& Mylist<T>::kth_last(size_t k) {
 	if (head == nullptr) return T();
-	// get length first
-	size_t len {0};
+	// get 2 pointers separated by k
 	Node<T>* n {head};
-	while (n) {n = n->next; ++len;}
-	if (len <= k) return head->data;	// k is too big
-	// now go down len-k steps
-	n = head;
-	for (int steps = len-k-1; steps > 0; --steps) {
-		n = n->next;
+	Node<T>* jump {head};
+	while (k) {
+		--k; 
+		if (!jump) return nullptr; 
+		else jump = jump->next;
 	}
-	return n->data;	
+	// now go down len-k steps
+	while (jump->next) {
+		n = n->next;
+		jump = jump->next;
+	}
+	return n;	
 }
 
 template <typename T>
