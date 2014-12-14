@@ -13,35 +13,37 @@ void test_mul() {
 				   {5, -2},
 				   {4, 2}};
 	if (A*B != Matrix<int>{{47, 4},{5,-11},{33,-9}}) 
-		cout << "FAILED...Multiplication\n";
-	else cout << "PASSED...Multiplication\n";
+		cout << "FAILED...Matrix multiplication\n";
+	
 }
 
 void test_pow() {
 	Matrix<int> F {{1, 1},
 				   {1, 0}};
 	if (F.pow(5) != Matrix<int>{{8, 5}, {5, 3}}) 
-		cout << "FAILED...Exponentiation\n";
-	else cout << "PASSED...Exponentiation\n";
+		cout << "FAILED...Matrix exponentiation\n";
 }
 
 void test_heap() {
 	Heap<int> h {3, 4, 6, 5, 1, 8, 11, 12};
-	if (h.is_maxheap()) cout << "PASSED...Heap construction\n";
-	else cout << "FAILED...Heap construction\n";
+	if (!h.is_maxheap()) cout << "FAILED...Heap construction\n";
 }
 
 void test_tree() {
+	auto nil = sal::Tree<int>::get_nil();
+	if (static_cast<int>(nil->color) != 0) 
+		std::cout << "FAILED...Tree nil\n";
+
 	sal::Tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 	t.print();
-	auto node = t.find(4);
-	if (!node) std::cout << "FAILED...Tree find\n";
-	t.erase(4);
-	t.print();
-	node = t.find(4);
-	if (node) std::cout << "FAILED...Tree insert\n";
-	t.insert(5);
-	t.print();
+	// auto node = t.find(4);
+	// if (node == nil) std::cout << "FAILED...Tree find\n";
+	// t.erase(4);
+	// t.print();
+	// node = t.find(4);
+	// if (node != nil) std::cout << "FAILED...Tree insert\n";
+	// t.insert(5);
+	// t.print();
 }
 
 int main() {
