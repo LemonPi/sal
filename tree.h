@@ -166,14 +166,7 @@ class Tree {
 		// fix the terminating case of a red root, which can always be turned black
 		root->color = Color::BLACK;
 	}
-	// moves one subtree to replace another one
-	void transplant(NP old, NP moved) {
-		if (old->parent == nil) root = moved;
-		else if (old == old->parent->left) old->parent->left = moved;
-		else old->parent->right = moved;
-		if (moved != nil) moved->parent = old->parent;
-		// updating moved's children is up to the caller
-	}
+
 	void tree_delete(NP node) {
 		// 4 cases based on the children of node
 		NP old {node};
@@ -194,6 +187,128 @@ class Tree {
 			successor->left->parent = successor; 
 		}
 		delete old;
+	}
+	void rb_delete(NP node) {
+		NP old {node};
+		// successor replaces the moved node
+		// moved either has 1 or no children
+		NP moved {node};
+		// successor is either the single child of moved or nil
+		NP successor;
+		Color moved_original_color {moved->color};
+		// < 2 children, successor is just the other child
+		if (node->left == nil) {
+			successor = node->right;
+			transplant(node, node->right);
+		}
+		else if (node->right == nil) {
+			successor = node->left;
+			transplant(node, node->left);
+		}
+		// both children, successor replaces node
+		else {
+			moved = tree_min(node->right);
+			moved_original_color = moved->color;
+			successor = moved->right;
+			// immediate right child of node
+			if (moved->parent == node) successor->parent = moved;
+			else {
+				// transplant assigns successor's parents
+				transplant(moved, moved->right);
+				moved->right = node->right;
+				moved->right->parent = moved;
+			}
+
+			transplant(node, moved);
+			moved->left = node->left;
+			moved->left->parent = moved;
+			moved->color = node->color;
+		}
+
+		// possible violation if a black node was moved
+		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
+		delete old;
+	}
+	void rb_delete_fixup(NP successor) {
+		// successor starts black-black, always has 1 extra black
+		// move extra black up tree until 
+		// 1. successor is red-black
+		// 2. successor is root, where extra black is removed
+		while (successor != root && successor->color == Color::BLACK) {
+			NP parent {successor->parent};
+			if (successor == parent->left) {
+				// sibling cannot be nil since successor is black (so bh is at least 1)
+				NP sibling {parent->right};
+				// case 1, red sibling is made black, and reduces to other cases
+				if (sibling->color == Color::RED) {
+					// parent must be black to avoid parent-sibling both red
+					sibling->color = Color::BLACK;
+					parent->color = Color::RED;
+					rotate_left(parent);
+					sibling = parent->right;	// previously sibling's left child
+				}
+				// cases 2,3,4 with sibling black, depending on its children's color
+				// case 2, remove a level of black off both sibling and successor
+				if (sibling->left->color == Color::BLACK && sibling->right->color == Color::BLACK) {
+					sibling->color = Color::RED;
+					successor = parent;	// parent now double black
+				}
+				else {
+					// case 3, sibling's left is red, switch sibling and its left child's color
+					if (sibling->right->color == Color::BLACK) {
+						sibling->left->color = Color::BLACK;
+						sibling->color = Color::RED;
+						rotate_right(sibling);
+						sibling = parent->right;	// previously sibling's left child
+					}
+					// case 4, sibling's right is red
+					sibling->color = parent->color;
+					parent->color = Color::BLACK;
+					sibling->right->color = Color::BLACK;
+					rotate_left(parent);
+					successor = root;
+				}
+			}
+			// successor is right child, mirror above
+			else {
+				NP sibling {parent->left};
+
+				if (sibling->color == Color::RED) {
+					sibling->color = Color::BLACK;
+					parent->color = Color::RED;
+					rotate_right(parent);
+					sibling = parent->left;
+				}
+
+				if (sibling->right->color == Color::BLACK && sibling->left->color == Color::BLACK) {
+					sibling->color = Color::RED;
+					successor = parent;	// parent now double black
+				}
+				else {
+					if (sibling->left->color == Color::BLACK) {
+						sibling->right->color = Color::BLACK;
+						sibling->color = Color::RED;
+						rotate_left(sibling);
+						sibling = parent->left;	
+					}
+					sibling->color = parent->color;
+					parent->color = Color::BLACK;
+					sibling->left->color = Color::BLACK;
+					rotate_right(parent);
+					successor = root;
+				}
+			}
+		}
+		successor->color = Color::BLACK;
+	}
+	// moves one subtree to replace another one
+	void transplant(NP old, NP moved) {
+		if (old->parent == nil) root = moved;
+		else if (old == old->parent->left) old->parent->left = moved;
+		else old->parent->right = moved;
+		// can assign to parent unconditionally due to sentinel
+		moved->parent = old->parent;
+		// updating moved's children is up to the caller
 	}
 
 	// traversals, Op is a function that performs a function on a NP
@@ -238,7 +353,7 @@ public:
 
 	void erase(T data) {
 		NP node {tree_find(root, data)};
-		if (node != nil) tree_delete(node);
+		if (node != nil) rb_delete(node);
 	}
 
 	NP find(T key) {

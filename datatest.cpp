@@ -36,14 +36,14 @@ void test_tree() {
 
 	sal::Tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 	t.print();
-	// auto node = t.find(4);
-	// if (node == nil) std::cout << "FAILED...Tree find\n";
-	// t.erase(4);
-	// t.print();
-	// node = t.find(4);
-	// if (node != nil) std::cout << "FAILED...Tree insert\n";
-	// t.insert(5);
-	// t.print();
+	auto node = t.find(4);
+	if (node == nil) std::cout << "FAILED...Tree find\n";
+	t.erase(4);
+	t.print();
+	node = t.find(4);
+	if (node != nil) std::cout << "FAILED...Tree insert\n";
+	t.insert(5);
+	t.print();
 }
 
 int main() {
