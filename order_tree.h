@@ -1,33 +1,48 @@
 #pragma once
-#include <iostream>
-#include <initializer_list>
+#include "tree.h"
 
 namespace sal {
-// no virtual methods since not meant to be polymorphic (e.g. don't point to an Order_tree with a Tree*)
-// RB tree, 4 properties:
-// 1. Every node either red or black
-// 2. Root and leaves (nil) are black
-// 3. A red node's children are both black / Parent of red node is black
-// 4. All simple paths from a node to descendent have same # of black
-enum class Color : char {BLACK = 0, RED = 1};
 
 template <typename T>
-class Tree {
-
-	struct Node {
+class Order_tree {
+	struct Order_node {
 		T key;
-		Node *parent, *left, *right;
+		Order_node *parent, *left, *right;
+		size_t size;	// # of descendent nodes including itself = left->size + right->size + 1
 		Color color;
-		Node() : color{Color::BLACK} {}	// sentinel construction
-		Node(T val, Color col = Color::RED) : key{val}, parent{nil}, left{nil}, right{nil}, color{col} {}
+		Order_node() : size{0}, color{Color::BLACK} {}	// sentinel construction
+		Order_node(T val, Color col = Color::RED) : key{val}, parent{nil}, left{nil}, right{nil}, size{1}, color{col} {}
 	};
-	using NP = typename Tree::Node*;
 
+	using NP = typename Order_tree::Order_node*;
 	NP root {nil};
-	// nil sentinel
 	static NP nil;
 
-	// core utilities
+	// order statistics operations
+	NP os_select(NP start, size_t rank) const {
+		while (rank > 0) {
+			size_t cur_rank {start->left->size + 1};
+			if (cur_rank == rank) return start;
+			else if (rank < cur_rank) start = start->left;
+			else {
+				start = start->right;
+				rank -= cur_rank;
+			}
+		}
+		return nil;
+	}
+
+	size_t os_rank(NP node) {
+		size_t rank {node->left->size + 1};
+		while (node != root) {
+			if (node == node->parent->right) 
+				rank += node->parent->left->size + 1;
+			node = node->parent;
+		}
+		return rank;
+	}
+
+	// core rb utilities
 	NP tree_find(NP start, T key) const {
 		while (start != nil && start->key != key) {
 			if (key < start->key) start = start->left;
@@ -64,53 +79,7 @@ class Tree {
 		}
 		return parent;
 	}
-	// rotations to preserve RB properties
-	/* rotate left shifts everything left s.t. 
-	   it becomes the left child of its original right child
-	   its right child is replaced by its right child's left child
-	*/
-	void rotate_left(NP node) {
-		NP child {node->right};
 
-		node->right = child->left;
-		if (child->left != nil) child->left->parent = node;
-
-		child->parent = node->parent;
-		if (node->parent == nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
-		else node->parent->right = child;
-
-		child->left = node;
-		node->parent = child;	
-	}
-	// rotate right shifts everything right, inverse of rotate left
-	void rotate_right(NP node) {
-		NP child {node->left};
-
-		node->left = child->right;
-		if (child->right != nil) child->right->parent = node;
-
-		child->parent = node->parent;
-		if (node->parent == nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
-		else node->parent->right = child;
-
-		child->right = node;
-		node->parent = child;	
-	}
-	// cannot do a simple tree_find for insert since parent has to be updated
-	void tree_insert(NP start, NP node) {
-		NP parent {nil};
-		while (start != nil) {
-			parent = start;
-			if (node->key < start->key) start = start->left;
-			else start = start->right;
-		}
-		node->parent = parent;
-		if (parent == nil) root = node;	// tree was empty
-		else if (node->key < parent->key) parent->left = node;
-		else parent->right = node;
-	}
 	// assume node is colored RED
 	void rb_insert(NP node) {
 		tree_insert(root, node);
@@ -169,47 +138,6 @@ class Tree {
 		root->color = Color::BLACK;
 	}
 
-	void rb_delete(NP node) {
-		NP old {node};
-		// successor replaces the moved node
-		// moved either has 1 or no children
-		NP moved {node};
-		// successor is either the single child of moved or nil
-		NP successor;
-		Color moved_original_color {moved->color};
-		// < 2 children, successor is just the other child
-		if (node->left == nil) {
-			successor = node->right;
-			transplant(node, node->right);
-		}
-		else if (node->right == nil) {
-			successor = node->left;
-			transplant(node, node->left);
-		}
-		// both children, successor replaces node
-		else {
-			moved = tree_min(node->right);
-			moved_original_color = moved->color;
-			successor = moved->right;
-			// immediate right child of node
-			if (moved->parent == node) successor->parent = moved;
-			else {
-				// transplant assigns successor's parents
-				transplant(moved, moved->right);
-				moved->right = node->right;
-				moved->right->parent = moved;
-			}
-
-			transplant(node, moved);
-			moved->left = node->left;
-			moved->left->parent = moved;
-			moved->color = node->color;
-		}
-
-		// possible violation if a black node was moved
-		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
-		delete old;
-	}
 	void rb_delete_fixup(NP successor) {
 		// successor starts black-black, always has 1 extra black
 		// move extra black up tree until 
@@ -293,17 +221,108 @@ class Tree {
 	}
 
 
+	// rb operations modified for order statistics 
+	void tree_insert(NP start, NP node) {
+		NP parent {nil};
+		while (start != nil) {
+			++start->size;	// simply increment size of each ancestor going down
+			parent = start;
+			if (node->key < start->key) start = start->left;
+			else start = start->right;
+		}
+		node->parent = parent;
+		if (parent == nil) root = node;
+		else if (node->key < parent->key) parent->left = node;
+		else parent->right = node;
+	}
+
+	void rb_delete(NP node) {
+		NP old {node};
+		NP moved {node};
+		NP successor;
+		Color moved_original_color {moved->color};
+		if (node->left == nil) {
+			successor = node->right;
+			transplant(node, node->right);
+		}
+		else if (node->right == nil) {
+			successor = node->left;
+			transplant(node, node->left);
+		}
+		else {
+			moved = tree_min(node->right);
+			moved_original_color = moved->color;
+			successor = moved->right;
+			if (moved->parent == node) successor->parent = moved;
+			else {
+				transplant(moved, moved->right);
+				moved->right = node->right;
+				moved->right->parent = moved;
+			}
+
+			transplant(node, moved);
+			moved->left = node->left;
+			moved->left->parent = moved;
+			moved->color = node->color;
+		}
+		// decrement size of ancestors of moved
+		moved = moved->parent;
+		while (moved != nil) {
+			--moved->size;
+			moved = moved->parent;
+		}
+		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
+		delete old;
+	}
+
+	// rotations, augmented by changing child and node's sizes
+	void rotate_left(NP node) {
+		NP child {node->right};
+
+		node->right = child->left;
+		if (child->left != nil) child->left->parent = node;
+
+		child->parent = node->parent;
+		if (node->parent == nil) root = child;
+		else if (node == node->parent->left) node->parent->left = child;
+		else node->parent->right = child;
+
+		child->left = node;
+		node->parent = child;
+
+		child->size = node->size;
+		node->size = node->left->size + node->right->size + 1;	
+	}
+	void rotate_right(NP node) {
+		NP child {node->left};
+
+		node->left = child->right;
+		if (child->right != nil) child->right->parent = node;
+
+		child->parent = node->parent;
+		if (node->parent == nil) root = child;
+		else if (node == node->parent->left) node->parent->left = child;
+		else node->parent->right = child;
+
+		child->right = node;
+		node->parent = child;	
+
+		child->size = node->size;
+		node->size = node->left->size + node->right->size + 1;
+	}
+
 public:
-	Tree() = default;
-	Tree(std::initializer_list<T> l) {
+public:
+	Order_tree() = default;
+	Order_tree(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
 	}
-	~Tree() {
+	~Order_tree() {
 		postorder_walk(root, [](NP node){delete node;});
 	}
 
 	void insert(T data) {
-		NP node {new Node(data)};
+		NP node {new Order_node(data)};
 		rb_insert(node);
 	};
 
@@ -314,6 +333,14 @@ public:
 
 	NP find(T key) {
 		return tree_find(root, key);
+	}
+
+	// order statistics methods interface
+	NP select(size_t rank) const {
+		return os_select(root, rank);
+	}
+	size_t rank(NP node) {
+		return os_rank(node);
 	}
 
 	// traversals, Op is a function that performs a function on a NP
@@ -342,17 +369,17 @@ public:
 		}
 	}
 
-	void print() const {
-		inorder_walk(root, [](NP node){std::cout << node->key << ' ';});
-		std::cout << "root: " << root->key << std::endl; 
-	}
 
+	void print() const {
+		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->size << ')' << ' ';});
+		std::cout << "root: " << root->key << '(' << root->size << ')' << std::endl; 
+	}
 	const static NP get_nil() {
 		return nil;
 	}
 };
 
 template <typename T>
-typename Tree<T>::NP Tree<T>::nil {new Node{}};
+typename Order_tree<T>::NP Order_tree<T>::nil {new Order_node{}};
 
 }	// end namespace sal

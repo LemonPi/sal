@@ -2,6 +2,7 @@
 #include "matrix.h"
 #include "heap.h"
 #include "tree.h"
+#include "order_tree.h"
 
 using namespace std;
 
@@ -36,14 +37,38 @@ void test_tree() {
 
 	sal::Tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 	t.print();
+
 	auto node = t.find(4);
 	if (node == nil) std::cout << "FAILED...Tree find\n";
+
 	t.erase(4);
 	t.print();
 	node = t.find(4);
-	if (node != nil) std::cout << "FAILED...Tree insert\n";
+	if (node != nil) std::cout << "FAILED...Tree erase\n";
+
 	t.insert(5);
 	t.print();
+}
+
+void test_order_tree() {
+	auto nil = sal::Order_tree<int>::get_nil();
+	sal::Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	t.print();
+
+	auto node = t.find(4);
+	if (node == nil) std::cout << "FAILED...Order tree find\n";
+
+	t.erase(4);
+	t.print();
+	node = t.find(4);
+	if (node != nil) std::cout << "FAILED...Order tree erase\n";
+
+	t.insert(5);
+	t.print();
+
+	int rank {4};
+	node = t.select(rank);
+	if (node == nil || node->key != 3) std::cout << "FAILED...Order tree select\n";
 }
 
 int main() {
@@ -52,4 +77,5 @@ int main() {
 	// test_pow();
 	// test_heap();
 	test_tree();
+	// test_order_tree();
 }
