@@ -5,26 +5,28 @@
 
 namespace sal {
 
+template <typename T>
 struct Interval {
-	int low, high;
-	friend bool operator==(const Interval a, const Interval b) {
+	T low, high;
+	friend bool operator==(const Interval<T> a, const Interval<T> b) {
 		return a.low == b.low && a.high == b.high;
 	}
-	friend bool operator!=(const Interval a, const Interval b) {
+	friend bool operator!=(const Interval<T> a, const Interval<T> b) {
 		return !(a == b);
 	}
 };
 
 // interval trees augmented from base RB-tree
+template <typename T>
 class Interval_set {
 	struct Internode {
-		int low, high, max;	// low is the key
+		T low, high, max;	// low is the key
 		Internode *parent, *left, *right;
 		Color color;
-		Internode() : max{std::numeric_limits<int>::lowest()}, color{Color::BLACK} {}	// sentinel construction
-		Internode(int l, int h, Color col = Color::RED) : low{l}, high{h}, max{h}, parent{nil}, left{nil}, right{nil}, color{col} {}
+		Internode() : max{std::numeric_limits<T>::lowest()}, color{Color::BLACK} {}	// sentinel construction
+		Internode(T l, T h, Color col = Color::RED) : low{l}, high{h}, max{h}, parent{nil}, left{nil}, right{nil}, color{col} {}
 		// convert to interval
-		operator Interval() {return {low, high};}
+		operator Interval<T>() {return {low, high};}
 	};
 
 	using NP = typename Interval_set::Internode*;
@@ -32,17 +34,17 @@ class Interval_set {
 	static NP nil;
 
 	// interval tree operation
-	bool no_overlap(NP interval, int low, int high) const {
+	bool no_overlap(NP interval, T low, T high) const {
 		return (low > interval->high || interval->low > high);
 	}
-	bool overlap(NP interval, int low, int high) const {
+	bool overlap(NP interval, T low, T high) const {
 		return !no_overlap(interval, low, high);
 	}
 	void update_max(NP interval) {
 		interval->max = max(interval->high, max(interval->left->max, interval->right->max));
 	}
 	// either finds an overlapping interval or nil
-	NP interval_search(NP interval, int low, int high) const {
+	NP interval_search(NP interval, T low, T high) const {
 		while (interval != nil && no_overlap(interval, low, high)) {
 			if (interval->left != nil && interval->left->max >= low)
 				interval = interval->left;
@@ -50,7 +52,7 @@ class Interval_set {
 		}
 		return interval;
 	}
-	NP interval_min_search(NP interval, int low, int high) const {
+	NP interval_min_search(NP interval, T low, T high) const {
 		// check if left subtree overlaps
 		if (interval->left != nil && interval->left->max >= low) {
 			NP min {interval_min_search(interval->left, low, high)};
@@ -63,7 +65,7 @@ class Interval_set {
 		else if (overlap(interval, low, high)) return interval;
 		else return interval_min_search(interval->right, low, high);
 	}
-	std::vector<NP> interval_all_search(NP interval, int low, int high) const {
+	std::vector<NP> interval_all_search(NP interval, T low, T high) const {
 		std::vector<NP> res;
 		if (overlap(interval, low, high)) res.push_back(interval);
 		if (interval->left != nil && interval->left->max >= low) {
@@ -76,7 +78,7 @@ class Interval_set {
 		}
 		return res;
 	}
-	NP interval_exact_search(NP start, int low, int high) {
+	NP interval_exact_search(NP start, T low, T high) {
 		NP interval {tree_find(start, low)};
 		// if found interval shares same low but different high, can continually search on same subtree
 		while (interval != nil && high != interval->high) interval = tree_find(interval, low);
@@ -85,7 +87,7 @@ class Interval_set {
 
 
 	// core rb utilities
-	NP tree_find(NP start, int low) const {
+	NP tree_find(NP start, T low) const {
 		while (start != nil && start->low != low) {
 			if (low < start->low) start = start->left;
 			else start = start->right;
@@ -354,54 +356,54 @@ class Interval_set {
 
 public:
 	Interval_set() = default;
-	Interval_set(std::initializer_list<Interval> l) {
+	Interval_set(std::initializer_list<Interval<T>> l) {
 		for (const auto& v : l) insert(v);
 	}
 	~Interval_set() {
 		postorder_walk(root, [](NP interval){delete interval;});
 	}
 
-	void insert(int low, int high) {
+	void insert(T low, T high) {
 		NP node {new Internode(low, high)};
 		rb_insert(node);
 	};
-	void insert(Interval interval) {
+	void insert(Interval<T> interval) {
 		NP node {new Internode(interval.low, interval.high)};
 		rb_insert(node);
 	}
 
-	void erase(int low, int high) {
+	void erase(T low, T high) {
 		NP interval {interval_exact_search(root, low, high)};
 		if (interval != nil) rb_delete(interval);
 	}
-	void erase(Interval interval) {
+	void erase(Interval<T> interval) {
 		NP candidate {interval_exact_search(root, interval.low, interval.high)};
 		if (candidate != nil) rb_delete(candidate);
 	}
 
 	// interval tree operation - find overlapping interval
-	NP find(int low, int high) {
+	NP find(T low, T high) {
 		return interval_search(root, low, high);
 	}
-	NP find(Interval interval) {
+	NP find(Interval<T> interval) {
 		return interval_search(root, interval.low, interval.high);
 	}
-	NP find_first(int low, int high) {
+	NP find_first(T low, T high) {
 		return interval_min_search(root, low, high);
 	}
-	NP find_first(Interval interval) {
+	NP find_first(Interval<T> interval) {
 		return interval_min_search(root, interval.low, interval.high);
 	}
-	std::vector<NP> find_all(int low, int high) {
+	std::vector<NP> find_all(T low, T high) {
 		return interval_all_search(root, low, high);
 	}
-	std::vector<NP> find_all(Interval interval) {
+	std::vector<NP> find_all(Interval<T> interval) {
 		return interval_all_search(root, interval.low, interval.high);
 	}
-	NP find_exact(int low, int high) {
+	NP find_exact(T low, T high) {
 		return interval_exact_search(root, low, high);
 	}
-	NP find_exact(Interval interval) {
+	NP find_exact(Interval<T> interval) {
 		return interval_exact_search(root, interval.low, interval.high);
 	}
 
@@ -441,6 +443,7 @@ public:
 	}
 };
 
-typename Interval_set::NP Interval_set::nil {new Internode{}};
+template <typename T>
+typename Interval_set<T>::NP Interval_set<T>::nil {new Internode{}};
 
 }

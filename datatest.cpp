@@ -74,13 +74,13 @@ void test_order_tree() {
 }
 
 void test_interval_set() {
-	auto nil = Interval_set::get_nil();
-	sal::Interval_set t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
+	auto nil = Interval_set<int>::get_nil();
+	sal::Interval_set<int> t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
 	t.print();
 
 
 	auto interval = t.find({22, 25});
-	if (*interval != Interval{15,23}) std::cout << "FAILED...Interval set find\n";
+	if (*interval != Interval<int>{15,23}) std::cout << "FAILED...Interval set find\n";
 
 	interval = t.find(11, 14);
 	if (interval != nil) std::cout << "FAILED...Interval set find\n";
