@@ -1,51 +1,57 @@
 #pragma once
+#include <limits>	// lowest()
 #include "tree.h"
 
 namespace sal {
 
-template <typename T>
-class Order_tree {
-	struct Order_node {
-		T key;
-		Order_node *parent, *left, *right;
-		size_t size;	// # of descendent nodes including itself = left->size + right->size + 1
+struct Interval {
+	int low, high;
+	friend bool operator==(const Interval a, const Interval b) {
+		return a.low == b.low && a.high == b.high;
+	}
+	friend bool operator!=(const Interval a, const Interval b) {
+		return !(a == b);
+	}
+};
+
+// interval trees augmented from base RB-tree
+class Interval_set {
+	struct Internode {
+		int low, high, max;	// low is the key
+		Internode *parent, *left, *right;
 		Color color;
-		Order_node() : size{0}, color{Color::BLACK} {}	// sentinel construction
-		Order_node(T val, Color col = Color::RED) : key{val}, parent{nil}, left{nil}, right{nil}, size{1}, color{col} {}
+		Internode() : max{std::numeric_limits<int>::lowest()}, color{Color::BLACK} {}	// sentinel construction
+		Internode(int l, int h, Color col = Color::RED) : low{l}, high{h}, max{h}, parent{nil}, left{nil}, right{nil}, color{col} {}
+		// convert to interval
+		operator Interval() {return {low, high};}
 	};
 
-	using NP = typename Order_tree::Order_node*;
+	using NP = typename Interval_set::Internode*;
 	NP root {nil};
 	static NP nil;
 
-	// order statistics operations
-	NP os_select(NP start, size_t rank) const {
-		while (rank > 0) {
-			size_t cur_rank {start->left->size + 1};
-			if (cur_rank == rank) return start;
-			else if (rank < cur_rank) start = start->left;
-			else {
-				start = start->right;
-				rank -= cur_rank;
-			}
-		}
-		return nil;
+	// interval tree operation
+	bool no_overlap(NP interval, int low, int high) const {
+		return (low > interval->high || interval->low > high);
 	}
-
-	size_t os_rank(NP node) {
-		size_t rank {node->left->size + 1};
-		while (node != root) {
-			if (node == node->parent->right) 
-				rank += node->parent->left->size + 1;
-			node = node->parent;
+	void update_max(NP interval) {
+		interval->max = max(interval->high, max(interval->left->max, interval->right->max));
+	}
+	// either finds an overlapping interval or nil
+	NP interval_search(NP start, int low, int high) const {
+		NP interval {start};
+		while (interval != nil && no_overlap(interval, low, high)) {
+			if (interval->left != nil && interval->left->max >= low)
+				interval = interval->left;
+			else interval = interval->right; 
 		}
-		return rank;
+		return interval;
 	}
 
 	// core rb utilities
-	NP tree_find(NP start, T key) const {
-		while (start != nil && start->key != key) {
-			if (key < start->key) start = start->left;
+	NP tree_find(NP start, int low) const {
+		while (start != nil && start->low != low) {
+			if (low < start->low) start = start->left;
 			else start = start->right;
 		}
 		return start;
@@ -58,7 +64,7 @@ class Order_tree {
 		while (start->right != nil) start = start->right;
 		return start;
 	}
-	// successor is node with smallest key greater than start
+	// successor is node with smallest low greater than start
 	NP tree_successor(NP start) const {
 		if (start->right) return tree_min(start->right);
 		// else go up until a node that's the left child of parent
@@ -221,18 +227,18 @@ class Order_tree {
 	}
 
 
-	// rb operations modified for order statistics 
+	// rb operations modified for intervals
 	void tree_insert(NP start, NP node) {
 		NP parent {nil};
 		while (start != nil) {
-			++start->size;	// simply increment size of each ancestor going down
+			start->max = max(start->max, node->max);	// update max
 			parent = start;
-			if (node->key < start->key) start = start->left;
+			if (node->low < start->low) start = start->left;
 			else start = start->right;
 		}
 		node->parent = parent;
 		if (parent == nil) root = node;
-		else if (node->key < parent->key) parent->left = node;
+		else if (node->low < parent->low) parent->left = node;
 		else parent->right = node;
 	}
 
@@ -265,10 +271,9 @@ class Order_tree {
 			moved->left->parent = moved;
 			moved->color = node->color;
 		}
-		// decrement size of ancestors of moved
-		moved = moved->parent;
+		// update all ancestors' max
 		while (moved != nil) {
-			--moved->size;
+			update_max(moved);
 			moved = moved->parent;
 		}
 		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
@@ -290,8 +295,8 @@ class Order_tree {
 		child->left = node;
 		node->parent = child;
 
-		child->size = node->size;
-		node->size = node->left->size + node->right->size + 1;	
+		update_max(node);
+		update_max(child);
 	}
 	void rotate_right(NP node) {
 		NP child {node->left};
@@ -307,39 +312,41 @@ class Order_tree {
 		child->right = node;
 		node->parent = child;	
 
-		child->size = node->size;
-		node->size = node->left->size + node->right->size + 1;
+		update_max(node);
+		update_max(child);
 	}
 
 public:
-	Order_tree() = default;
-	Order_tree(std::initializer_list<T> l) {
+	Interval_set() = default;
+	Interval_set(std::initializer_list<Interval> l) {
 		for (const auto& v : l) insert(v);
 	}
-	~Order_tree() {
-		postorder_walk(root, [](NP node){delete node;});
+	~Interval_set() {
+		postorder_walk(root, [](NP interval){delete interval;});
 	}
 
-	void insert(T data) {
-		NP node {new Order_node(data)};
+	void insert(int low, int high) {
+		NP node {new Internode(low, high)};
 		rb_insert(node);
 	};
-
-	void erase(T data) {
-		NP node {tree_find(root, data)};
-		if (node != nil) rb_delete(node);
+	void insert(Interval interval) {
+		NP node {new Internode(interval.low, interval.high)};
+		rb_insert(node);
 	}
 
-	NP find(T key) {
-		return tree_find(root, key);
+	void erase(int low, int high) {
+		NP interval {tree_find(root, low)};
+		// if found interval shares same low but different high, can continually search on same subtree
+		while (interval != nil && high != interval->high) interval = tree_find(interval, low);
+		if (interval != nil) rb_delete(interval);
 	}
 
-	// order statistics methods interface
-	NP select(size_t rank) const {
-		return os_select(root, rank);
+	// interval tree operation - find overlapping interval
+	NP find(int low, int high) {
+		return interval_search(root, low, high);
 	}
-	size_t rank(NP node) {
-		return os_rank(node);
+	NP find(Interval interval) {
+		return interval_search(root, interval.low, interval.high);
 	}
 
 	// traversals, Op is a function that performs a function on a NP
@@ -370,15 +377,14 @@ public:
 
 
 	void print() const {
-		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->size << ')' << ' ';});
-		std::cout << "root: " << root->key << '(' << root->size << ')' << std::endl; 
+		inorder_walk(root, [](NP node){std::cout << '[' << node->low << ',' << node->high << ']' << '(' << node->max << ')' << ' ';});
+		std::cout << "root: " << '[' << root->low << ',' << root->high << ']' << '(' << root->max << ')' << std::endl; 
 	}
 	const static NP get_nil() {
 		return nil;
 	}
 };
 
-template <typename T>
-typename Order_tree<T>::NP Order_tree<T>::nil {new Order_node{}};
+typename Interval_set::NP Interval_set::nil {new Internode{}};
 
-}	// end namespace sal
+}

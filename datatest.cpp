@@ -3,8 +3,10 @@
 #include "heap.h"
 #include "tree.h"
 #include "order_tree.h"
+#include "interval.h"
 
 using namespace std;
+using namespace sal;
 
 void test_mul() {
 	Matrix<int> A {{2, 5, 6},
@@ -71,11 +73,25 @@ void test_order_tree() {
 	if (node == nil || node->key != 3) std::cout << "FAILED...Order tree select\n";
 }
 
+void test_interval_set() {
+	auto nil = Interval_set::get_nil();
+	sal::Interval_set t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
+	t.print();
+
+
+	auto interval = t.find({22, 25});
+	if (*interval != Interval{15,23}) std::cout << "FAILED...Interval set find\n";
+
+	interval = t.find(11, 14);
+	if (interval != nil) std::cout << "FAILED...Interval set find\n";
+}
+
 int main() {
 	// Matrix<int> id3 {identity<int>(3)};
 	// test_mul();
 	// test_pow();
 	// test_heap();
-	test_tree();
+	// test_tree();
 	// test_order_tree();
+	test_interval_set();
 }
