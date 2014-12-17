@@ -1,5 +1,6 @@
 #pragma once
 #include <limits>	// lowest()
+#include <vector>
 #include "tree.h"
 
 namespace sal {
@@ -34,12 +35,14 @@ class Interval_set {
 	bool no_overlap(NP interval, int low, int high) const {
 		return (low > interval->high || interval->low > high);
 	}
+	bool overlap(NP interval, int low, int high) const {
+		return !no_overlap(interval, low, high);
+	}
 	void update_max(NP interval) {
 		interval->max = max(interval->high, max(interval->left->max, interval->right->max));
 	}
 	// either finds an overlapping interval or nil
-	NP interval_search(NP start, int low, int high) const {
-		NP interval {start};
+	NP interval_search(NP interval, int low, int high) const {
 		while (interval != nil && no_overlap(interval, low, high)) {
 			if (interval->left != nil && interval->left->max >= low)
 				interval = interval->left;
@@ -47,6 +50,39 @@ class Interval_set {
 		}
 		return interval;
 	}
+	NP interval_min_search(NP interval, int low, int high) const {
+		// check if left subtree overlaps
+		if (interval->left != nil && interval->left->max >= low) {
+			NP min {interval_min_search(interval->left, low, high)};
+			// there exists an overlapping interval with lower low
+			if (min != nil) return min;
+			else if (overlap(interval, low, high)) return interval;
+			else return nil;
+		}
+		// if left subtree doesn't overlap, then check if current one does
+		else if (overlap(interval, low, high)) return interval;
+		else return interval_min_search(interval->right, low, high);
+	}
+	std::vector<NP> interval_all_search(NP interval, int low, int high) const {
+		std::vector<NP> res;
+		if (overlap(interval, low, high)) res.push_back(interval);
+		if (interval->left != nil && interval->left->max >= low) {
+			std::vector<NP> left {interval_all_search(interval->left, low, high)};
+			res.insert(res.end(), left.begin(), left.end());
+		} 
+		if (interval->right != nil && interval->right->low <= low) {
+			std::vector<NP> right {interval_all_search(interval->right, low, high)};
+			res.insert(res.end(), right.begin(), right.end());
+		}
+		return res;
+	}
+	NP interval_exact_search(NP start, int low, int high) {
+		NP interval {tree_find(start, low)};
+		// if found interval shares same low but different high, can continually search on same subtree
+		while (interval != nil && high != interval->high) interval = tree_find(interval, low);
+		return interval;
+	}
+
 
 	// core rb utilities
 	NP tree_find(NP start, int low) const {
@@ -335,10 +371,12 @@ public:
 	}
 
 	void erase(int low, int high) {
-		NP interval {tree_find(root, low)};
-		// if found interval shares same low but different high, can continually search on same subtree
-		while (interval != nil && high != interval->high) interval = tree_find(interval, low);
+		NP interval {interval_exact_search(root, low, high)};
 		if (interval != nil) rb_delete(interval);
+	}
+	void erase(Interval interval) {
+		NP candidate {interval_exact_search(root, interval.low, interval.high)};
+		if (candidate != nil) rb_delete(candidate);
 	}
 
 	// interval tree operation - find overlapping interval
@@ -347,6 +385,24 @@ public:
 	}
 	NP find(Interval interval) {
 		return interval_search(root, interval.low, interval.high);
+	}
+	NP find_first(int low, int high) {
+		return interval_min_search(root, low, high);
+	}
+	NP find_first(Interval interval) {
+		return interval_min_search(root, interval.low, interval.high);
+	}
+	std::vector<NP> find_all(int low, int high) {
+		return interval_all_search(root, low, high);
+	}
+	std::vector<NP> find_all(Interval interval) {
+		return interval_all_search(root, interval.low, interval.high);
+	}
+	NP find_exact(int low, int high) {
+		return interval_exact_search(root, low, high);
+	}
+	NP find_exact(Interval interval) {
+		return interval_exact_search(root, interval.low, interval.high);
 	}
 
 	// traversals, Op is a function that performs a function on a NP
