@@ -2,7 +2,6 @@
 #include "matrix.h"
 #include "heap.h"
 #include "tree.h"
-#include "order_tree.h"
 #include "interval.h"
 
 using namespace std;
@@ -73,6 +72,24 @@ void test_order_tree() {
 	if (node == nil || node->key != 3) std::cout << "FAILED...Order tree select\n";
 }
 
+void test_treap() {
+	auto nil = sal::Treap<int>::get_nil();
+
+	sal::Treap<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	t.print();
+
+	auto node = t.find(4);
+	if (node == nil) std::cout << "FAILED...Tree find\n";
+
+	t.erase(4);
+	t.print();
+	node = t.find(4);
+	if (node != nil) std::cout << "FAILED...Tree erase\n";
+
+	t.insert(5);
+	t.print();
+}
+
 void test_interval_set() {
 	auto nil = Interval_set<int>::get_nil();
 	sal::Interval_set<int> t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
@@ -86,6 +103,8 @@ void test_interval_set() {
 	if (interval != nil) std::cout << "FAILED...Interval set find\n";
 }
 
+
+
 int main() {
 	// Matrix<int> id3 {identity<int>(3)};
 	// test_mul();
@@ -93,5 +112,6 @@ int main() {
 	// test_heap();
 	// test_tree();
 	// test_order_tree();
-	test_interval_set();
+	// test_interval_set();
+	test_treap();
 }
