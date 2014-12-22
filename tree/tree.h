@@ -11,72 +11,98 @@ namespace sal {
 // 4. All simple paths from a node to descendent have same # of black
 enum class Color : char {BLACK = 0, RED = 1};
 
-template <typename T>
+// core utilities
+template <typename Node>
+Node* tree_find(Node* start, typename Node::key_type key) {
+	while (start != Node::nil && start->key != key) {
+		if (key < start->key) start = start->left;
+		else start = start->right;
+	}
+	return start;
+}
+
+template <typename Node>
+Node* tree_min(Node* start) {
+	while (start->left != Node::nil) start = start->left;
+	return start;
+}
+
+template <typename Node>
+Node* tree_max(Node* start) {
+	while (start->right != Node::nil) start = start->right;
+	return start;
+}
+// successor is node with smallest key greater than start
+template <typename Node>
+Node* tree_successor(Node* start) {
+	if (start->right) return tree_min(start->right);
+	// else go up until a node that's the left child of parent
+	Node* parent {start->parent};
+	while (parent != Node::nil && start == parent->right) {
+		start = parent;
+		parent = parent->parent;
+	}
+	return parent;
+}
+template <typename Node>
+Node* tree_predecessor(Node* start) {
+	if (start->left) return tree_max(start->left);
+	// else go up until a node that's the right child of parent
+	Node* parent {start->parent};
+	while (parent != Node::nil && start == parent->left) {
+		start = parent;
+		parent = parent->parent;
+	}
+	return parent;
+}
+
+
+// traversals
+template <typename Node, typename Op>
+void preorder_walk(Node* start, Op op) {
+	if (start != Node::nil) {
+		op(start);
+		inorder_walk(start->left, op);
+		inorder_walk(start->right, op);
+	}
+}
+template <typename Node, typename Op>
+void inorder_walk(Node* start, Op op) {
+	if (start != Node::nil) {
+		inorder_walk(start->left, op);
+		op(start);
+		inorder_walk(start->right, op);
+	}
+}
+template <typename Node, typename Op>
+void postorder_walk(Node* start, Op op) {
+	if (start != Node::nil) {
+		inorder_walk(start->left, op);
+		inorder_walk(start->right, op);
+		op(start);
+	}
+}
+
+template <typename Node>
 class Tree {
+protected:
+	using NP = Node*;
+	using T = typename Node::key_type;
 
-	struct Node {
-		T key;
-		Node *parent, *left, *right;
-		Color color;
-		Node() : color{Color::BLACK} {}	// sentinel construction
-		Node(T val, Color col = Color::RED) : key{val}, parent{nil}, left{nil}, right{nil}, color{col} {}
-	};
-	using NP = typename Tree::Node*;
-
-	NP root {nil};
-	// nil sentinel
-	static NP nil;
-
-	// core utilities
-	NP tree_find(NP start, T key) const {
-		while (start != nil && start->key != key) {
-			if (key < start->key) start = start->left;
-			else start = start->right;
-		}
-		return start;
-	}
-	NP tree_min(NP start) const {
-		while (start->left != nil) start = start->left;
-		return start;
-	}
-	NP tree_max(NP start) const {
-		while (start->right != nil) start = start->right;
-		return start;
-	}
-	// successor is node with smallest key greater than start
-	NP tree_successor(NP start) const {
-		if (start->right) return tree_min(start->right);
-		// else go up until a node that's the left child of parent
-		NP parent {start->parent};
-		while (parent != nil && start == parent->right) {
-			start = parent;
-			parent = parent->parent;
-		}
-		return parent;
-	}
-	NP tree_predecessor(NP start) const {
-		if (start->left) return tree_max(start->left);
-		// else go up until a node that's the right child of parent
-		NP parent {start->parent};
-		while (parent != nil && start == parent->left) {
-			start = parent;
-			parent = parent->parent;
-		}
-		return parent;
-	}
+	NP root {Node::nil};
 	// rotations to preserve RB properties
 	/* rotate left shifts everything left s.t. 
 	   it becomes the left child of its original right child
 	   its right child is replaced by its right child's left child
 	*/
-	void rotate_left(NP node) {
+	virtual void rotate_left(NP node) {
 		NP child {node->right};
 
 		node->right = child->left;
-		if (child->left != nil) child->left->parent = node;
+		if (child->left != Node::nil) child->left->parent = node;
 
 		child->parent = node->parent;
-		if (node->parent == nil) root = child;
+		if (node->parent == Node::nil) root = child;
 		else if (node == node->parent->left) node->parent->left = child;
 		else node->parent->right = child;
 
@@ -84,14 +110,14 @@ class Tree {
 		node->parent = child;	
 	}
 	// rotate right shifts everything right, inverse of rotate left
-	void rotate_right(NP node) {
+	virtual void rotate_right(NP node) {
 		NP child {node->left};
 
 		node->left = child->right;
-		if (child->right != nil) child->right->parent = node;
+		if (child->right != Node::nil) child->right->parent = node;
 
 		child->parent = node->parent;
-		if (node->parent == nil) root = child;
+		if (node->parent == Node::nil) root = child;
 		else if (node == node->parent->left) node->parent->left = child;
 		else node->parent->right = child;
 
@@ -99,15 +125,15 @@ class Tree {
 		node->parent = child;	
 	}
 	// cannot do a simple tree_find for insert since parent has to be updated
-	void tree_insert(NP start, NP node) {
-		NP parent {nil};
-		while (start != nil) {
+	virtual void tree_insert(NP start, NP node) {
+		NP parent {Node::nil};
+		while (start != Node::nil) {
 			parent = start;
 			if (node->key < start->key) start = start->left;
 			else start = start->right;
 		}
 		node->parent = parent;
-		if (parent == nil) root = node;	// tree was empty
+		if (parent == Node::nil) root = node;	// tree was empty
 		else if (node->key < parent->key) parent->left = node;
 		else parent->right = node;
 	}
@@ -169,20 +195,20 @@ class Tree {
 		root->color = Color::BLACK;
 	}
 
-	void rb_delete(NP node) {
+	virtual void rb_delete(NP node) {
 		NP old {node};
 		// successor replaces the moved node
 		// moved either has 1 or no children
 		NP moved {node};
-		// successor is either the single child of moved or nil
+		// successor is either the single child of moved or Node::nil
 		NP successor;
 		Color moved_original_color {moved->color};
 		// < 2 children, successor is just the other child
-		if (node->left == nil) {
+		if (node->left == Node::nil) {
 			successor = node->right;
 			transplant(node, node->right);
 		}
-		else if (node->right == nil) {
+		else if (node->right == Node::nil) {
 			successor = node->left;
 			transplant(node, node->left);
 		}
@@ -218,7 +244,7 @@ class Tree {
 		while (successor != root && successor->color == Color::BLACK) {
 			NP parent {successor->parent};
 			if (successor == parent->left) {
-				// sibling cannot be nil since successor is black (so bh is at least 1)
+				// sibling cannot be Node::nil since successor is black (so bh is at least 1)
 				NP sibling {parent->right};
 				// case 1, red sibling is made black, and reduces to other cases
 				if (sibling->color == Color::RED) {
@@ -282,9 +308,10 @@ class Tree {
 		}
 		successor->color = Color::BLACK;
 	}
+
 	// moves one subtree to replace another one
 	void transplant(NP old, NP moved) {
-		if (old->parent == nil) root = moved;
+		if (old->parent == Node::nil) root = moved;
 		else if (old == old->parent->left) old->parent->left = moved;
 		else old->parent->right = moved;
 		// can assign to parent unconditionally due to sentinel
@@ -298,7 +325,7 @@ public:
 	Tree(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
 	}
-	~Tree() {
+	virtual ~Tree() {
 		postorder_walk(root, [](NP node){delete node;});
 	}
 
@@ -309,7 +336,7 @@ public:
 
 	void erase(T data) {
 		NP node {tree_find(root, data)};
-		if (node != nil) rb_delete(node);
+		if (node != Node::nil) rb_delete(node);
 	}
 
 	NP find(T key) {
@@ -317,42 +344,33 @@ public:
 	}
 
 	// traversals, Op is a function that performs a function on a NP
-	template <typename Op>
-	friend void preorder_walk(NP start, Op op) {
-		if (start != nil) {
-			op(start);
-			inorder_walk(start->left, op);
-			inorder_walk(start->right, op);
-		}
-	}
-	template <typename Op>
-	friend void inorder_walk(NP start, Op op) {
-		if (start != nil) {
-			inorder_walk(start->left, op);
-			op(start);
-			inorder_walk(start->right, op);
-		}
-	}
-	template <typename Op>
-	friend void postorder_walk(NP start, Op op) {
-		if (start != nil) {
-			inorder_walk(start->left, op);
-			inorder_walk(start->right, op);
-			op(start);
-		}
-	}
-
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << node->key << ' ';});
 		std::cout << "root: " << root->key << std::endl; 
 	}
 
 	const static NP get_nil() {
-		return nil;
+		return Node::nil;
 	}
 };
 
+
 template <typename T>
-typename Tree<T>::NP Tree<T>::nil {new Node{}};
+struct Basic_node {
+	static Basic_node* nil;
+
+	using key_type = T;
+	T key;
+	Basic_node *parent, *left, *right;
+	Color color;
+	Basic_node() : color{Color::BLACK} {}	// sentinel construction
+	Basic_node(T val) : key{val}, parent{nil}, left{nil}, right{nil}, color{Color::RED} {}
+};
+
+template <typename T>
+using Basic_tree = Tree<Basic_node<T>>;
+
+template <typename T>
+Basic_node<T>* Basic_node<T>::nil {new Basic_node{}};
 
 }	// end namespace sal

@@ -8,6 +8,7 @@
 
 using namespace std;
 
+namespace sal {
 
 template <typename T>
 class Matrix {
@@ -213,3 +214,4 @@ void Matrix<T>::print() {
 	cout << *this;
 }
 
+}

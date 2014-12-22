@@ -4,23 +4,16 @@
 // Treaps are a combination of BST and min-heap with
 // treed on key and heaped on priority, which is randomly generated
 // this simulates a tree built with random data, prevents imbalance
+// parent pointer not really necessary
 namespace sal {
 
-template <typename T>
+template <typename Node>
 class Treap {
-	struct Treap_node {
-		T key;
-		int priority;
-		Treap_node *parent, *left, *right;
-		Treap_node() : priority{std::numeric_limits<int>::max()} {}	// sentinel construction
-		Treap_node(T val) : key{val}, priority{rand()}, parent{nil}, left{nil}, right{nil} {}
-	};
+protected:
+	using NP = Node*;
+	using T = typename Node::key_type;
 
-	using NP = typename Treap::Treap_node*;
-
-	NP root {nil};
-	// nil sentinel
-	static NP nil;
+	NP root {Node::nil};
 
 	// treap specific methods
 	void treap_insert(NP node) {
@@ -30,7 +23,7 @@ class Treap {
 			else rotate_left(node->parent);
 		}
 	}
-	void treap_delete(NP node) {
+	virtual void treap_delete(NP node) {
 		// 4 cases based on the children of node
 		NP old {node};
 		// either no children or just one child
@@ -57,56 +50,20 @@ class Treap {
 		delete old;
 	}
 
-	// core tree utilities
-	NP tree_find(NP start, T key) const {
-		while (start != nil && start->key != key) {
-			if (key < start->key) start = start->left;
-			else start = start->right;
-		}
-		return start;
-	}
-	NP tree_min(NP start) const {
-		while (start->left != nil) start = start->left;
-		return start;
-	}
-	NP tree_max(NP start) const {
-		while (start->right != nil) start = start->right;
-		return start;
-	}
-	// successor is node with smallest key greater than start
-	NP tree_successor(NP start) const {
-		if (start->right) return tree_min(start->right);
-		// else go up until a node that's the left child of parent
-		NP parent {start->parent};
-		while (parent != nil && start == parent->right) {
-			start = parent;
-			parent = parent->parent;
-		}
-		return parent;
-	}
-	NP tree_predecessor(NP start) const {
-		if (start->left) return tree_max(start->left);
-		// else go up until a node that's the right child of parent
-		NP parent {start->parent};
-		while (parent != nil && start == parent->left) {
-			start = parent;
-			parent = parent->parent;
-		}
-		return parent;
-	}
+	// core treap utilities
 	// rotations to preserve RB properties
 	/* rotate left shifts everything left s.t. 
 	   it becomes the left child of its original right child
 	   its right child is replaced by its right child's left child
 	*/
-	void rotate_left(NP node) {
+	virtual void rotate_left(NP node) {
 		NP child {node->right};
 
 		node->right = child->left;
-		if (child->left != nil) child->left->parent = node;
+		if (child->left != Node::nil) child->left->parent = node;
 
 		child->parent = node->parent;
-		if (node->parent == nil) root = child;
+		if (node->parent == Node::nil) root = child;
 		else if (node == node->parent->left) node->parent->left = child;
 		else node->parent->right = child;
 
@@ -114,14 +71,14 @@ class Treap {
 		node->parent = child;	
 	}
 	// rotate right shifts everything right, inverse of rotate left
-	void rotate_right(NP node) {
+	virtual void rotate_right(NP node) {
 		NP child {node->left};
 
 		node->left = child->right;
-		if (child->right != nil) child->right->parent = node;
+		if (child->right != Node::nil) child->right->parent = node;
 
 		child->parent = node->parent;
-		if (node->parent == nil) root = child;
+		if (node->parent == Node::nil) root = child;
 		else if (node == node->parent->left) node->parent->left = child;
 		else node->parent->right = child;
 
@@ -129,23 +86,22 @@ class Treap {
 		node->parent = child;	
 	}
 	// cannot do a simple tree_find for insert since parent has to be updated
-	void tree_insert(NP start, NP node) {
-		NP parent {nil};
-		while (start != nil) {
+	virtual void tree_insert(NP start, NP node) {
+		NP parent {Node::nil};
+		while (start != Node::nil) {
 			parent = start;
 			if (node->key < start->key) start = start->left;
 			else start = start->right;
 		}
 		node->parent = parent;
-		if (parent == nil) root = node;	// tree was empty
+		if (parent == Node::nil) root = node;	// tree was empty
 		else if (node->key < parent->key) parent->left = node;
 		else parent->right = node;
 	}
 
-
 	// moves one subtree to replace another one
 	void transplant(NP old, NP moved) {
-		if (old->parent == nil) root = moved;
+		if (old->parent == Node::nil) root = moved;
 		else if (old == old->parent->left) old->parent->left = moved;
 		else old->parent->right = moved;
 		// can assign to parent unconditionally due to sentinel
@@ -153,54 +109,27 @@ class Treap {
 		// updating moved's children is up to the caller
 	}
 
-
 public:
 	Treap() = default;
 	Treap(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
 	}
-	~Treap() {
+	virtual ~Treap() {
 		postorder_walk(root, [](NP node){delete node;});
 	}
 
 	void insert(T data) {
-		NP node {new Treap_node(data)};
+		NP node {new Node(data)};
 		treap_insert(node);
 	};
 
 	void erase(T data) {
 		NP node {tree_find(root, data)};
-		if (node != nil) treap_delete(node);
+		if (node != Node::nil) treap_delete(node);
 	}
 
 	NP find(T key) {
 		return tree_find(root, key);
-	}
-
-	// traversals, Op is a function that performs a function on a NP
-	template <typename Op>
-	friend void preorder_walk(NP start, Op op) {
-		if (start != nil) {
-			op(start);
-			inorder_walk(start->left, op);
-			inorder_walk(start->right, op);
-		}
-	}
-	template <typename Op>
-	friend void inorder_walk(NP start, Op op) {
-		if (start != nil) {
-			inorder_walk(start->left, op);
-			op(start);
-			inorder_walk(start->right, op);
-		}
-	}
-	template <typename Op>
-	friend void postorder_walk(NP start, Op op) {
-		if (start != nil) {
-			inorder_walk(start->left, op);
-			inorder_walk(start->right, op);
-			op(start);
-		}
 	}
 
 	void print() const {
@@ -208,12 +137,28 @@ public:
 		std::cout << "root: " << root->key << '(' << root->priority << ')' << std::endl; 
 	}
 
-	const static NP get_nil() {
-		return nil;
+	 const static NP get_nil() {
+		return Node::nil;
 	}
 };
 
 template <typename T>
-typename Treap<T>::NP Treap<T>::nil {new Treap_node{}};
+struct Treap_node {
+	static Treap_node* nil;
+	using key_type = T;
+
+	T key;
+	int priority;
+	Treap_node *parent, *left, *right;
+	Treap_node() : priority{std::numeric_limits<int>::max()} {}	// sentinel construction
+	Treap_node(T val) : key{val}, priority{rand()}, parent{nil}, left{nil}, right{nil} {}
+};
+
+
+template <typename T>
+Treap_node<T>* Treap_node<T>::nil {new Treap_node{}};
+
+template <typename T>
+using Basic_treap = Treap<Treap_node<T>>;
 
 }	// end namespace sal

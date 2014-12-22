@@ -32,20 +32,20 @@ void test_heap() {
 }
 
 void test_tree() {
-	auto nil = sal::Tree<int>::get_nil();
+	auto nil = sal::Basic_tree<int>::get_nil();
 	if (static_cast<int>(nil->color) != 0) 
-		std::cout << "FAILED...Tree nil\n";
+		std::cout << "FAILED...Basic_tree nil\n";
 
-	sal::Tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	sal::Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 	t.print();
 
 	auto node = t.find(4);
-	if (node == nil) std::cout << "FAILED...Tree find\n";
+	if (node == nil) std::cout << "FAILED...Basic_tree find\n";
 
 	t.erase(4);
 	t.print();
 	node = t.find(4);
-	if (node != nil) std::cout << "FAILED...Tree erase\n";
+	if (node != nil) std::cout << "FAILED...Basic_tree erase\n";
 
 	t.insert(5);
 	t.print();
@@ -73,9 +73,9 @@ void test_order_tree() {
 }
 
 void test_treap() {
-	auto nil = sal::Treap<int>::get_nil();
+	auto nil = sal::Basic_treap<int>::get_nil();
 
-	sal::Treap<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	sal::Basic_treap<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 	t.print();
 
 	auto node = t.find(4);
@@ -102,8 +102,6 @@ void test_interval_set() {
 	interval = t.find(11, 14);
 	if (interval != nil) std::cout << "FAILED...Interval set find\n";
 }
-
-
 
 int main() {
 	// Matrix<int> id3 {identity<int>(3)};
