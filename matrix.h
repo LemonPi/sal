@@ -5,6 +5,8 @@
 #include <set>
 #include <stdexcept>
 #include <initializer_list>
+#include <limits>	// numeric limits
+#include "algo/utility.h"	// Rand int
 
 using namespace std;
 
@@ -15,6 +17,7 @@ class Matrix {
 	size_t rows, cols;
 	vector<T> elems;
 public:
+	Matrix(size_t r, size_t c) : rows{r}, cols{c}, elems(r*c, 0) {}	// default init to 0
 	Matrix(size_t r, size_t c, vector<T>&& e) : rows{r}, cols{c}, elems{move(e)} {}
 	Matrix(initializer_list<initializer_list<T>> a);
 	Matrix(const Matrix& a) : rows{a.row()}, cols{a.col()}, elems{a.elems} {}
@@ -31,6 +34,28 @@ public:
 	}
 	size_t row() const { return rows; }
 	size_t col() const { return cols; }
+
+	void resize_rows(size_t new_rows, T def = 0) {
+		elems.resize(new_rows, def);
+	}
+
+	void resize(size_t new_rows, size_t new_cols, T def = 0) {
+		// simply resize elems
+		if (new_cols == cols) return resize_rows(new_rows, def);
+		size_t row_max {min(rows, new_rows)};
+		size_t col_max {min(cols, new_cols)};
+		vector<T> new_elems(new_rows * new_cols, def);
+		for (size_t r = 0; r < row_max; ++r) {
+			for (size_t c = 0; c < col_max; ++c) {
+				std::copy(elems.begin() + r*cols, elems.begin() + r*cols + col_max, 
+					new_elems.begin() + r*new_cols);
+			}
+		}
+		elems = std::move(new_elems);
+		rows = new_rows;
+		cols = new_cols;
+	}
+
 
 	T& get(size_t row, size_t col) { return elems[row*cols + col]; }
 	const T& get (size_t row, size_t col) const {return elems[row*cols + col]; }
@@ -61,6 +86,18 @@ Matrix<T> identity(size_t size) {
 		id.get(i,i) = 1;
 	}
 	return id;
+}
+template <typename T>
+Matrix<T> random_matrix(size_t row, size_t col, 
+	T min = std::numeric_limits<T>::min(), 
+	T max = std::numeric_limits<T>::max()) {
+	Rand_int die{min, max};
+    vector<T> elems;
+    elems.reserve(row * col);
+    for (int i = 0; i < row * col; ++i)
+        elems.push_back(static_cast<T>(die()));
+
+    return Matrix<T>(row, col, std::move(elems));
 }
 
 template <typename T>

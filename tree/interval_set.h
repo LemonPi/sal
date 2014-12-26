@@ -96,7 +96,6 @@ class Interval_augment : public Tree<Node> {
 	}
 
 	virtual void rb_delete(NP node) override {
-		NP old {node};
 		NP moved {node};
 		NP successor;
 		Color moved_original_color {moved->color};
@@ -130,7 +129,7 @@ class Interval_augment : public Tree<Node> {
 			moved = moved->parent;
 		}
 		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
-		delete old;
+		delete node;
 	}
 
 	// rotations, augmented by changing child and node's sizes

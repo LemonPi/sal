@@ -28,7 +28,7 @@ class Order_augment : public Tree<Node> {
 		return Node::nil;
 	}
 
-	size_t os_rank(NP node) {
+	size_t os_rank(NP node) const {
 		size_t rank {node->left->size + 1};
 		while (node != root) {
 			if (node == node->parent->right) 
@@ -54,7 +54,6 @@ class Order_augment : public Tree<Node> {
 	}
 
 	virtual void rb_delete(NP node) override {
-		NP old {node};
 		NP moved {node};
 		NP successor;
 		Color moved_original_color {moved->color};
@@ -89,7 +88,7 @@ class Order_augment : public Tree<Node> {
 			moved = moved->parent;
 		}
 		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
-		delete old;
+		delete node;
 	}
 
 	// rotations, augmented by changing child and node's sizes

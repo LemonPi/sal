@@ -196,7 +196,6 @@ protected:
 	}
 
 	virtual void rb_delete(NP node) {
-		NP old {node};
 		// successor replaces the moved node
 		// moved either has 1 or no children
 		NP moved {node};
@@ -234,7 +233,7 @@ protected:
 
 		// possible violation if a black node was moved
 		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
-		delete old;
+		delete node;
 	}
 	void rb_delete_fixup(NP successor) {
 		// successor starts black-black, always has 1 extra black

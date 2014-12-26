@@ -16,16 +16,18 @@ protected:
 	NP root {Node::nil};
 
 	// treap specific methods
-	void treap_insert(NP node) {
-		tree_insert(root, node);
+	void heap_fix_up(NP node) {
 		while (node != root && node->priority < node->parent->priority) {
 			if (node == node->parent->left) rotate_right(node->parent);
 			else rotate_left(node->parent);
 		}
 	}
+	void treap_insert(NP node) {
+		tree_insert(root, node);
+		heap_fix_up(node);
+	}
 	virtual void treap_delete(NP node) {
 		// 4 cases based on the children of node
-		NP old {node};
 		// either no children or just one child
 		if 		(!node->left) transplant(node, node->right);
 		else if (!node->right) transplant(node, node->left);
@@ -47,7 +49,7 @@ protected:
 				else rotate_left(successor);
 			}
 		}
-		delete old;
+		delete node;
 	}
 
 	// core treap utilities
@@ -129,7 +131,14 @@ public:
 	}
 
 	NP find(T key) {
-		return tree_find(root, key);
+		NP found {tree_find(root,key)};
+		// elevate the found node's priority for better temporal locality
+		if (found != Node::nil) {
+			found->priority >>= 1;
+			// fix any min-heap violations
+			heap_fix_up(found);
+		}
+		return found;
 	}
 
 	void print() const {

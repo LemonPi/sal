@@ -1,11 +1,17 @@
 #include <iostream>
-#include "matrix.h"
-#include "heap.h"
-#include "tree.h"
-#include "interval.h"
+#include "data/matrix.h"
+#include "data/heap.h"
+#include "data/tree.h"
+#include "data/list.h"
+#include "data/interval.h"
+#include "data/graph.h"
 
 using namespace std;
 using namespace sal;
+void test_list() {
+	Basic_list<int> l {1, 4, 2, 5, 3, 7, 6};
+	std::cout << l;
+}
 
 void test_mul() {
 	Matrix<int> A {{2, 5, 6},
@@ -88,6 +94,10 @@ void test_treap() {
 
 	t.insert(5);
 	t.print();
+	// attempt to elevate 4's priority
+	t.insert(4);
+	for (int i = 0; i < 20; ++i) t.find(4);
+	t.print();
 }
 
 void test_interval_set() {
@@ -103,13 +113,54 @@ void test_interval_set() {
 	if (interval != nil) std::cout << "FAILED...Interval set find\n";
 }
 
-int main() {
-	// Matrix<int> id3 {identity<int>(3)};
+void test_undirected_graph() {
+	using Edge = sal::Dedge<int>;
+	vector<Edge> edge_list {{5,1},{5,4},{5,10},{1,4},{4,10}};
+	sal::graph g {edge_list.begin(), edge_list.end()};
+
+	if (g.edge(5, 1) != 1 || g.edge(5, 2) != 0 || g.edge(4, 1) != 1) 
+		std::cout << "FAILED...Undirected unweighted graph edge\n";
+
+	if (g.degree(3) != 0 || g.degree(5) != 3 || g.degree(4) != 3 || g.degree(2) != 0)
+		std::cout << "FAILED...Undirected unweighted graph degree\n";
+		
+	// weighted
+	vector<sal::Dwedge<int>> wedge_list {{5,1,2}, {5,4,1}, {5,10,3}, {1,4,6}, {4,10,5}};
+	sal::graph w {wedge_list.begin(), wedge_list.end()};
+
+	if (w.edge(5, 1) != 2 || w.edge(5, 2) != 0 || w.edge(4, 1) != 6) 
+		std::cout << "FAILED...Undirected weighted graph edge\n";
+
+	if (w.degree(3) != 0 || w.degree(5) != 3 || w.degree(4) != 3 || w.degree(2) != 0)
+		std::cout << "FAILED...Undirected weighted graph degree\n";	
+
+	// adjacency matrix
+	sal::graph_alt w_alt {wedge_list.begin(), wedge_list.end(), 4};
+	if (w_alt.edge(5, 1) != 2 || w_alt.edge(5, 2) != 0 || w_alt.edge(4, 1) != 6) 
+		std::cout << "FAILED...Alternative undirected weighted graph edge\n";
+
+	if (w_alt.degree(3) != 0 || w_alt.degree(5) != 3 || w_alt.degree(4) != 3 || w.degree(2) != 0)
+		std::cout << "FAILED...Alternative undirected weighted graph degree\n";		
+}
+
+void test_matrix() {
+	Matrix<int> id3 {identity<int>(3)};
+	std::cout << id3 << std::endl;
+	id3.resize(4,5);
+	std::cout << id3 << std::endl;
+	id3.resize(2,2);
+	std::cout << id3 << std::endl;
 	// test_mul();
 	// test_pow();
+}
+
+int main() {
 	// test_heap();
 	// test_tree();
 	// test_order_tree();
 	// test_interval_set();
-	test_treap();
+	// test_treap();
+	// test_list();
+	test_undirected_graph();
+	// test_matrix();
 }
