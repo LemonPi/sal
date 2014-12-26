@@ -128,6 +128,8 @@ class Order_augment : public Tree<Node> {
 	}
 
 public:
+	using Iter  = typename Tree<Node>::Iter;
+	using cIter = typename Tree<Node>::cIter;
 	Order_augment() = default;
 	Order_augment(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -143,14 +145,13 @@ public:
 		if (node != Node::nil) rb_delete(node);
 	}
 
-	NP find(T key) {
-		return tree_find(root, key);
-	}
-
 	// order statistics methods interface
-	NP select(size_t rank) const {
-		return os_select(root, rank);
+	Iter select(size_t rank) {
+		return Iter{os_select(root, rank)};
 	}
+	cIter select(size_t rank) const {
+		return cIter{os_select(root, rank)};
+	}	
 	size_t rank(NP node) {
 		return os_rank(node);
 	}

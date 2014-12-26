@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include "data/matrix.h"
 #include "data/heap.h"
@@ -38,79 +39,68 @@ void test_heap() {
 }
 
 void test_tree() {
-	auto nil = sal::Basic_tree<int>::get_nil();
+
+	using Node = sal::Basic_node<int>;
+	sal::Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+
+	auto nil = t.end();
 	if (static_cast<int>(nil->color) != 0) 
 		std::cout << "FAILED...Basic_tree nil\n";
 
-	sal::Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
-	t.print();
-
 	auto node = t.find(4);
-	if (node == nil) std::cout << "FAILED...Basic_tree find\n";
+	if (node == t.end()) std::cout << "FAILED...Basic_tree find\n";
 
 	t.erase(4);
-	t.print();
 	node = t.find(4);
-	if (node != nil) std::cout << "FAILED...Basic_tree erase\n";
+	if (node != t.end()) std::cout << "FAILED...Basic_tree erase\n";
 
 	t.insert(5);
-	t.print();
+	// testing iterators
+	for_each(t.begin(), t.end(), 
+		[](const Node& node){std::cout << node.key << ' ';});
 }
 
 void test_order_tree() {
-	auto nil = sal::Order_tree<int>::get_nil();
 	sal::Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
-	t.print();
 
 	auto node = t.find(4);
-	if (node == nil) std::cout << "FAILED...Order tree find\n";
+	if (node == t.end()) std::cout << "FAILED...Order tree find\n";
 
 	t.erase(4);
-	t.print();
 	node = t.find(4);
-	if (node != nil) std::cout << "FAILED...Order tree erase\n";
+	if (node != t.end()) std::cout << "FAILED...Order tree erase\n";
 
 	t.insert(5);
-	t.print();
 
 	int rank {4};
 	node = t.select(rank);
-	if (node == nil || node->key != 3) std::cout << "FAILED...Order tree select\n";
+	if (node == t.end() || node->key != 3) std::cout << "FAILED...Order tree select\n";
 }
 
 void test_treap() {
-	auto nil = sal::Basic_treap<int>::get_nil();
-
 	sal::Basic_treap<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
-	t.print();
 
 	auto node = t.find(4);
-	if (node == nil) std::cout << "FAILED...Tree find\n";
+	if (node == t.end()) std::cout << "FAILED...Tree find\n";
 
 	t.erase(4);
-	t.print();
 	node = t.find(4);
-	if (node != nil) std::cout << "FAILED...Tree erase\n";
+	if (node != t.end()) std::cout << "FAILED...Tree erase\n";
 
 	t.insert(5);
-	t.print();
 	// attempt to elevate 4's priority
 	t.insert(4);
 	for (int i = 0; i < 20; ++i) t.find(4);
-	t.print();
 }
 
 void test_interval_set() {
-	auto nil = Interval_set<int>::get_nil();
 	sal::Interval_set<int> t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
-	t.print();
-
 
 	auto interval = t.find({22, 25});
 	if (*interval != Interval<int>{15,23}) std::cout << "FAILED...Interval set find\n";
 
 	interval = t.find(11, 14);
-	if (interval != nil) std::cout << "FAILED...Interval set find\n";
+	if (interval != t.end()) std::cout << "FAILED...Interval set find\n";
 }
 
 void test_undirected_graph() {
@@ -156,11 +146,11 @@ void test_matrix() {
 
 int main() {
 	// test_heap();
-	// test_tree();
-	// test_order_tree();
-	// test_interval_set();
-	// test_treap();
+	test_tree();
+	test_order_tree();
+	test_interval_set();
+	test_treap();
 	// test_list();
-	test_undirected_graph();
+	// test_undirected_graph();
 	// test_matrix();
 }

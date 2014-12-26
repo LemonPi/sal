@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>	// rand
 #include <limits>	// max
+#include "tree.h"	// iterators
 // Treaps are a combination of BST and min-heap with
 // treed on key and heaped on priority, which is randomly generated
 // this simulates a tree built with random data, prevents imbalance
@@ -112,6 +113,8 @@ protected:
 	}
 
 public:
+	using Iter = Tree_iterator<Node>;
+	using cIter = Tree_const_iterator<Node>;
 	Treap() = default;
 	Treap(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -130,7 +133,7 @@ public:
 		if (node != Node::nil) treap_delete(node);
 	}
 
-	NP find(T key) {
+	Iter find(T key) {
 		NP found {tree_find(root,key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
@@ -138,17 +141,19 @@ public:
 			// fix any min-heap violations
 			heap_fix_up(found);
 		}
-		return found;
-	}
+		return Iter{found};
+	}	
+	// iterators
+	Iter begin() 		{return Iter{tree_min(root)};}
+	cIter begin() const {return cIter{tree_min(root)};}
+	Iter end() 			{return Iter{Node::nil};}
+	cIter end() const 	{return cIter{Node::nil};}
 
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->priority << ')' << ' ';});
 		std::cout << "root: " << root->key << '(' << root->priority << ')' << std::endl; 
 	}
 
-	 const static NP get_nil() {
-		return Node::nil;
-	}
 };
 
 template <typename T>

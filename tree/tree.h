@@ -35,7 +35,7 @@ Node* tree_max(Node* start) {
 // successor is node with smallest key greater than start
 template <typename Node>
 Node* tree_successor(Node* start) {
-	if (start->right) return tree_min(start->right);
+	if (start->right != Node::nil) return tree_min(start->right);
 	// else go up until a node that's the left child of parent
 	Node* parent {start->parent};
 	while (parent != Node::nil && start == parent->right) {
@@ -46,7 +46,7 @@ Node* tree_successor(Node* start) {
 }
 template <typename Node>
 Node* tree_predecessor(Node* start) {
-	if (start->left) return tree_max(start->left);
+	if (start->left != Node::nil) return tree_max(start->left);
 	// else go up until a node that's the right child of parent
 	Node* parent {start->parent};
 	while (parent != Node::nil && start == parent->left) {
@@ -83,9 +83,44 @@ void postorder_walk(Node* start, Op op) {
 	}
 }
 
+// non-const bidirectional iterator
+template <typename Node>
+struct Tree_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_iterator<Node>&;
+
+	NP cur;
+
+	void operator++() {cur = tree_successor(cur);}
+	void operator--() {cur = tree_predecessor(cur);}
+	Node& operator*() {return *cur;}
+	NP operator->() {return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+};
+
+// const bidirectional iterator
+template <typename Node>
+struct Tree_const_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_iterator<Node>&;
+
+	const NP cur;
+
+	void operator++() {cur = tree_successor(cur);}
+	void operator--() {cur = tree_predecessor(cur);}
+	Node operator*() {return *cur;}
+	NP const operator->() {return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+};
+
 template <typename Node>
 class Tree {
 protected:
+	friend struct Tree_iterator<Node>;
 	using NP = Node*;
 	using T = typename Node::key_type;
 
@@ -320,6 +355,8 @@ protected:
 
 
 public:
+	using Iter = Tree_iterator<Node>;
+	using cIter = Tree_const_iterator<Node>;
 	Tree() = default;
 	Tree(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -338,18 +375,19 @@ public:
 		if (node != Node::nil) rb_delete(node);
 	}
 
-	NP find(T key) {
-		return tree_find(root, key);
-	}
+	Iter find(T key) 		{return Iter{tree_find(root, key)};}
+	cIter find(T key) const {return cIter{tree_find(root, key)};}
+
+	// iterator
+	Iter begin() 		{return Iter{tree_min(root)};}
+	cIter begin() const {return cIter{tree_min(root)};}
+	Iter end() 			{return Iter{Node::nil};}
+	cIter end() const 	{return cIter{Node::nil};}
 
 	// traversals, Op is a function that performs a function on a NP
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << node->key << ' ';});
 		std::cout << "root: " << root->key << std::endl; 
-	}
-
-	const static NP get_nil() {
-		return Node::nil;
 	}
 };
 

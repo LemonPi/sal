@@ -66,6 +66,15 @@ public:
 		auto v_itr = adj.find(v); 
 		return (v_itr == adj.end())? 0 : v_itr->second.size();
 	}
+	const Edges& adjacent(const V v) const {
+		auto v_itr = adj.find(v);
+		if (v_itr != adj.end()) return *v_itr;
+		else return {};
+	}
+	const V min_vertex() const {
+		if (adj.empty()) return 0;
+		return adj.begin()->first;
+	}
 
 	// modifier interface
 	void add_vertex(const V v) override {

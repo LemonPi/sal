@@ -169,6 +169,8 @@ class Interval_augment : public Tree<Node> {
 	}
 
 public:
+	using Iter  = typename Tree<Node>::Iter;
+	using cIter = typename Tree<Node>::cIter;
 	Interval_augment() = default;
 	Interval_augment(std::initializer_list<Interval<T>> l) {
 		for (const auto& v : l) insert(v);
@@ -193,30 +195,21 @@ public:
 	}
 
 	// interval tree operation - find overlapping interval
-	NP find(T low, T high) {
-		return interval_search(root, low, high);
-	}
-	NP find(Interval<T> interval) {
-		return interval_search(root, interval.low, interval.high);
-	}
-	NP find_first(T low, T high) {
-		return interval_min_search(root, low, high);
-	}
-	NP find_first(Interval<T> interval) {
-		return interval_min_search(root, interval.low, interval.high);
-	}
-	std::vector<NP> find_all(T low, T high) {
-		return interval_all_search(root, low, high);
-	}
-	std::vector<NP> find_all(Interval<T> interval) {
-		return interval_all_search(root, interval.low, interval.high);
-	}
-	NP find_exact(T low, T high) {
-		return interval_exact_search(root, low, high);
-	}
-	NP find_exact(Interval<T> interval) {
-		return interval_exact_search(root, interval.low, interval.high);
-	}
+	Iter find(T low, T high) 						{return Iter{interval_search(root, low, high)};}
+	Iter find(Interval<T> interval) 				{return Iter{interval_search(root, interval.low, interval.high)};}
+	Iter find_first(T low, T high) 					{return Iter{interval_min_search(root, low, high)};}
+	Iter find_first(Interval<T> interval) 			{return Iter{interval_min_search(root, interval.low, interval.high)};}
+	std::vector<NP> find_all(T low, T high) 		{return interval_all_search(root, low, high);}
+	std::vector<NP> find_all(Interval<T> interval) 	{return interval_all_search(root, interval.low, interval.high);}
+	Iter find_exact(T low, T high) 					{return Iter{interval_exact_search(root, low, high)};}
+	Iter find_exact(Interval<T> interval) 			{return Iter{interval_exact_search(root, interval.low, interval.high)};}
+	// const versions
+	cIter find(T low, T high) const					{return Iter{interval_search(root, low, high)};}
+	cIter find(Interval<T> interval) const			{return Iter{interval_search(root, interval.low, interval.high)};}
+	cIter find_first(T low, T high) const			{return Iter{interval_min_search(root, low, high)};}
+	cIter find_first(Interval<T> interval) const	{return Iter{interval_min_search(root, interval.low, interval.high)};}
+	cIter find_exact(T low, T high) const			{return Iter{interval_exact_search(root, low, high)};}
+	cIter find_exact(Interval<T> interval) const	{return Iter{interval_exact_search(root, interval.low, interval.high)};}
 
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << '[' << node->key << ',' << node->high << ']' << '(' << node->max << ')' << ' ';});

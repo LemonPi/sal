@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <unordered_map>
 #include "data/matrix.h"
 #include "interface.h"
@@ -7,6 +8,7 @@ namespace sal {
 
 // undirected unweighted
 class Adjacency_matrix : public Graph<size_t> {
+	using Edges = std::map<size_t, int>;
 	// n x n matrix representing each vertex's edges
 	Matrix<int> adj;
 	// vertex name (user defined) to index inside array
@@ -55,6 +57,14 @@ public:
 		for (size_t col = 0; col < adj.col(); ++col)
 			res += (index_edge(v_i, col) == 0)? 0 : 1;
 		return res;
+	}
+	const Edges adjacent(size_t v) const {
+		if (v_index.find(v) == v_index.end()) return {};
+		size_t v_i = v_index.find(v)->second;
+		Edges neighbours;
+		for (size_t u_i = 0; u_i < vertex(); ++u_i)
+			if (index_edge(v_i, u_i) != 0) neighbours[u_i] = index_edge(v_i, u_i);
+		return std::move(neighbours);
 	}
 
 	// vertex numbered by order inserted
