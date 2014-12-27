@@ -19,7 +19,7 @@ class Matrix {
 public:
 	Matrix(size_t r, size_t c) : rows{r}, cols{c}, elems(r*c, 0) {}	// default init to 0
 	Matrix(size_t r, size_t c, vector<T>&& e) : rows{r}, cols{c}, elems{move(e)} {}
-	Matrix(initializer_list<initializer_list<T>> a);
+	Matrix(const initializer_list<initializer_list<T>>& a);
 	Matrix(const Matrix& a) : rows{a.row()}, cols{a.col()}, elems{a.elems} {}
 	Matrix(Matrix&& a) : rows{a.row()}, cols{a.col()}, elems{move(a.elems)} {}
 	Matrix<T>& operator=(const Matrix& a) {
@@ -101,7 +101,7 @@ Matrix<T> random_matrix(size_t row, size_t col,
 }
 
 template <typename T>
-Matrix<T>::Matrix(initializer_list<initializer_list<T>> a) : rows{a.size()}, cols{a.size() ? a.begin()->size() : 0} {
+Matrix<T>::Matrix(const initializer_list<initializer_list<T>>& a) : rows{a.size()}, cols{a.size() ? a.begin()->size() : 0} {
 	elems.reserve(rows * cols);
 	for (const auto& r : a) 
 		for (const auto& c : r) 

@@ -2,12 +2,11 @@
 #include <map>
 #include <unordered_map>
 #include "data/matrix.h"
-#include "interface.h"
 
 namespace sal {
 
 // undirected unweighted
-class Adjacency_matrix : public Graph<size_t> {
+class Adjacency_matrix {
 	using Edges = std::map<size_t, int>;
 	// n x n matrix representing each vertex's edges
 	Matrix<int> adj;
@@ -38,19 +37,32 @@ public:
 		}		
 	}
 
-	// selectors
-	size_t vertex() const override {
-		return adj.row();
+	// cardinality of vertex set
+	size_t num_vertex() const {return adj.row();}
+	virtual size_t num_edge() const {
+		size_t edges {};
+		for (size_t edge = 0; edge < adj.row() * adj.col(); ++edge) edges += (edge != 0);
+		return edges >> 1;	// divide by 2 for undirected
 	}
+
+	// check existence of vertex and edge
+	bool vertex(size_t v) const {return v_index.find(v) != v_index.end();}
+	bool edge(size_t u, size_t v) const {
+		auto u_itr = v_index.find(u);
+		auto v_itr = v_index.find(v);
+
+		return !(u_itr == v_index.end() || v_itr == v_index.end());
+	}
+
 	// weight of edge, 1/0 for unweighted edge
-	int edge(size_t u, size_t v) const override {
+	int weight(size_t u, size_t v) const {
 		auto u_itr = v_index.find(u);
 		auto v_itr = v_index.find(v);
 
 		if (u_itr == v_index.end() || v_itr == v_index.end()) return 0;
 		return adj.get(u_itr->second, v_itr->second);
 	}
-	size_t degree(size_t v) const override {
+	size_t degree(size_t v) const {
 		if (v_index.find(v) == v_index.end()) return 0;
 		size_t v_i {v_index.find(v)->second};
 		size_t res {};
@@ -62,13 +74,13 @@ public:
 		if (v_index.find(v) == v_index.end()) return {};
 		size_t v_i = v_index.find(v)->second;
 		Edges neighbours;
-		for (size_t u_i = 0; u_i < vertex(); ++u_i)
+		for (size_t u_i = 0; u_i < num_vertex(); ++u_i)
 			if (index_edge(v_i, u_i) != 0) neighbours[u_i] = index_edge(v_i, u_i);
 		return std::move(neighbours);
 	}
 
 	// vertex numbered by order inserted
-	void add_vertex(const size_t u) {
+	void add_vertex(size_t u) {
 		v_index[u] = adj.row();
 		adj.resize(adj.row() + 1, adj.col() + 1);
 	}
@@ -84,10 +96,10 @@ public:
 
 	friend ostream& operator<<(ostream& os, const Adjacency_matrix& g) {
 		os << g.adj;
-		// for (size_t v = 0; v < g.vertex(); ++v) {
+		// for (size_t v = 0; v < g.num_vertex(); ++v) {
 		// 	os << v << '(';
 		// 	bool empty {true};
-		// 	for (size_t neighbour = 0; neighbour < g.vertex(); ++neighbour) 
+		// 	for (size_t neighbour = 0; neighbour < g.num_vertex(); ++neighbour) 
 		// 		if (g.edge(v, neighbour) > 0) { os << neighbour << ':' << g.edge(v, neighbour) << ','; empty = false; }
 		// 	if (!empty) os << '\b';
 		// 	os << ") ";

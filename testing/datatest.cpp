@@ -106,9 +106,9 @@ void test_interval_set() {
 void test_undirected_graph() {
 	using Edge = sal::Dedge<int>;
 	vector<Edge> edge_list {{5,1},{5,4},{5,10},{1,4},{4,10}};
-	sal::graph g {edge_list.begin(), edge_list.end()};
+	sal::graph<int> g {edge_list.begin(), edge_list.end()};
 
-	if (g.edge(5, 1) != 1 || g.edge(5, 2) != 0 || g.edge(4, 1) != 1) 
+	if (g.weight(5, 1) != 1 || g.weight(5, 2) != 0 || g.weight(4, 1) != 1) 
 		std::cout << "FAILED...Undirected unweighted graph edge\n";
 
 	if (g.degree(3) != 0 || g.degree(5) != 3 || g.degree(4) != 3 || g.degree(2) != 0)
@@ -116,30 +116,76 @@ void test_undirected_graph() {
 		
 	// weighted
 	vector<sal::Dwedge<int>> wedge_list {{5,1,2}, {5,4,1}, {5,10,3}, {1,4,6}, {4,10,5}};
-	sal::graph w {wedge_list.begin(), wedge_list.end()};
+	sal::graph<int> w {wedge_list.begin(), wedge_list.end()};
 
-	if (w.edge(5, 1) != 2 || w.edge(5, 2) != 0 || w.edge(4, 1) != 6) 
+	if (w.weight(5, 1) != 2 || w.weight(5, 2) != 0 || w.weight(4, 1) != 6) 
 		std::cout << "FAILED...Undirected weighted graph edge\n";
 
 	if (w.degree(3) != 0 || w.degree(5) != 3 || w.degree(4) != 3 || w.degree(2) != 0)
 		std::cout << "FAILED...Undirected weighted graph degree\n";	
 
 	// adjacency iterator
-	auto adj_pair = w.adjacent(5);
+	auto edges = w.adjacent(5);
 	// alter the weight
-	for (auto v = adj_pair.first; v != adj_pair.second; ++v)
+	for (auto v = edges.first; v != edges.second; ++v)
 		v.weight() = 1;
 	// constant iteration
-	for (auto v = adj_pair.first; v != adj_pair.second; ++v)
+	for (auto v = edges.first; v != edges.second; ++v)
 		if (v.weight() != 1) std::cout << "FAILED...graph iteration\n";
 
 	// adjacency matrix
 	sal::graph_alt w_alt {wedge_list.begin(), wedge_list.end(), 4};
-	if (w_alt.edge(5, 1) != 2 || w_alt.edge(5, 2) != 0 || w_alt.edge(4, 1) != 6) 
+	if (w_alt.weight(5, 1) != 2 || w_alt.weight(5, 2) != 0 || w_alt.weight(4, 1) != 6) 
 		std::cout << "FAILED...Alternative undirected weighted graph edge\n";
 
 	if (w_alt.degree(3) != 0 || w_alt.degree(5) != 3 || w_alt.degree(4) != 3 || w.degree(2) != 0)
 		std::cout << "FAILED...Alternative undirected weighted graph degree\n";		
+}
+
+void test_directed_graph() {
+	using Edge = sal::Dedge<int>;
+	vector<Edge> edge_list {{5,1},{5,4},{5,10},{1,4},{4,10}};
+	sal::digraph<int> g {edge_list.begin(), edge_list.end()};
+
+	if (g.weight(5, 1) != 1 || g.weight(5, 2) != 0 || g.weight(4, 1) != 0) 
+		std::cout << "FAILED...Directed unweighted graph edge\n";
+
+	if (g.degree(3) != 0 || g.degree(5) != 3 || g.degree(4) != 1 || g.degree(10) != 0)
+		std::cout << "FAILED...Directed unweighted graph degree\n";
+
+	// weighted
+	vector<sal::Dwedge<int>> wedge_list {{5,1,2}, {5,4,1}, {5,10,3}, {1,4,6}, {4,10,5}};
+	sal::digraph<int> w {wedge_list.begin(), wedge_list.end()};
+
+	if (w.weight(5, 1) != 2 || w.weight(5, 2) != 0 || w.weight(4, 1) != 0 || w.weight(1, 4) != 6 || w.weight(4, 10) != 5) 
+		std::cout << "FAILED...Directed weighted graph edge\n";
+
+	if (w.degree(3) != 0 || w.degree(4) != 1 || w.degree(10) != 0 || w.degree(1) != 1)
+		std::cout << "FAILED...Directed weighted graph degree\n";	
+
+	// adjacency iterator
+	auto edges = w.adjacent(5);
+	// alter the weight
+	for (auto v = edges.first; v != edges.second; ++v)
+		v.weight() = 1;
+	// constant iteration
+	for (auto v = edges.first; v != edges.second; ++v)
+		if (v.weight() != 1) std::cout << "FAILED...Graph adjacent iteration\n";
+
+	// non-existent edges
+	edges = w.adjacent(2);
+	bool ghost_print {false};
+	for (auto v = edges.first; v != edges.second; ++v)
+		ghost_print = true;
+	if (ghost_print) std::cout << "FAILED...Graph adjacent iteration (non-existent edge)\n";
+
+	// vertex iteration
+	for (auto v = w.begin(); v != w.end(); ++v)
+		if (!w.vertex(*v)) std::cout << "FAILED...Graph vertex iteration\n";
+
+	sal::graph<char> d {{'v','r'},{'r','s'},{'s','w'},{'w','t'},{'t','x'},{'w','x'},{'t','u'},
+						{'x','u'},{'x','y'},{'u','y'}};
+	std::cout << "from s to u: " << sal::bfs(d, 's', 'u') << std::endl;
 }
 
 void test_matrix() {
@@ -161,5 +207,6 @@ int main() {
 	// test_treap();
 	// test_list();
 	test_undirected_graph();
+	test_directed_graph();
 	// test_matrix();
 }
