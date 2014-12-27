@@ -32,6 +32,39 @@ struct Dwedge {
 	int get_weight() const {return weight;}
 };
 
+// iterate over neighbours of a vertex 
+// for adjacency lists just a wrapper around map's iterator
+template <typename V, typename Iter>
+struct Adjacent_iterator {
+	using CR = const Adjacent_iterator<V, Iter>&;
+	using E = typename Iter::value_type;
+	Iter cur;
+
+	void operator++() {++cur;}
+	void operator--() {--cur;}
+	E& operator*() {return *cur;}
+	E* operator->() {return &(*cur);}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+	const V& dest() {return cur->first;}
+	int& weight() {return cur->second;}
+};
+template <typename V, typename Iter>
+struct Adjacent_const_iterator {
+	using CR = const Adjacent_const_iterator<V, Iter>&;
+	using E = typename Iter::value_type;
+	Iter cur;
+
+	void operator++() {++cur;}
+	void operator--() {--cur;}
+	E operator*() {return *cur;}
+	const E* operator->() {return &(*cur);}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+	const V dest() {return cur->first;}
+	int weight() {return cur->second;}
+};
+
 // undirected weighted graph
 template <typename V = int, typename Edges = std::map<V, int>>
 class Adjacency_list : public Graph<V> {
@@ -40,6 +73,8 @@ class Adjacency_list : public Graph<V> {
 	// can be labeled vertex 0, vertex 1, vertex 2, ...
 	std::map<V, Edges> adj;
 public:
+	using Adj_iter = Adjacent_iterator<V, typename Edges::iterator>;
+	using Adj_citer = Adjacent_const_iterator<V, typename Edges::const_iterator>;
 	// constructors
 	Adjacency_list() = default;
 	template <typename Iter_edgelist>
@@ -66,11 +101,20 @@ public:
 		auto v_itr = adj.find(v); 
 		return (v_itr == adj.end())? 0 : v_itr->second.size();
 	}
-	const Edges& adjacent(const V v) const {
+	// begin and end
+	std::pair<Adj_iter, Adj_iter> adjacent(const V v) {
 		auto v_itr = adj.find(v);
-		if (v_itr != adj.end()) return *v_itr;
-		else return {};
+		if (v_itr != adj.end()) 
+			return {{v_itr->second.begin()}, {v_itr->second.end()}};
+		else return {{},{}};
+	}	
+	std::pair<Adj_citer, Adj_citer> adjacent(const V v) const {
+		auto v_itr = adj.find(v);
+		if (v_itr != adj.end()) 
+			return {{v_itr->second.begin()}, {v_itr->second.end()}};
+		else return {{},{}};
 	}
+
 	const V min_vertex() const {
 		if (adj.empty()) return 0;
 		return adj.begin()->first;

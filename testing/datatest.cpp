@@ -55,7 +55,7 @@ void test_tree() {
 	if (node != t.end()) std::cout << "FAILED...Basic_tree erase\n";
 
 	t.insert(5);
-	// testing iterators
+	// testing iterators with standard library functions
 	for_each(t.begin(), t.end(), 
 		[](const Node& node){std::cout << node.key << ' ';});
 }
@@ -124,6 +124,15 @@ void test_undirected_graph() {
 	if (w.degree(3) != 0 || w.degree(5) != 3 || w.degree(4) != 3 || w.degree(2) != 0)
 		std::cout << "FAILED...Undirected weighted graph degree\n";	
 
+	// adjacency iterator
+	auto adj_pair = w.adjacent(5);
+	// alter the weight
+	for (auto v = adj_pair.first; v != adj_pair.second; ++v)
+		v.weight() = 1;
+	// constant iteration
+	for (auto v = adj_pair.first; v != adj_pair.second; ++v)
+		if (v.weight() != 1) std::cout << "FAILED...graph iteration\n";
+
 	// adjacency matrix
 	sal::graph_alt w_alt {wedge_list.begin(), wedge_list.end(), 4};
 	if (w_alt.edge(5, 1) != 2 || w_alt.edge(5, 2) != 0 || w_alt.edge(4, 1) != 6) 
@@ -146,11 +155,11 @@ void test_matrix() {
 
 int main() {
 	// test_heap();
-	test_tree();
-	test_order_tree();
-	test_interval_set();
-	test_treap();
+	// test_tree();
+	// test_order_tree();
+	// test_interval_set();
+	// test_treap();
 	// test_list();
-	// test_undirected_graph();
+	test_undirected_graph();
 	// test_matrix();
 }

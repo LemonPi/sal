@@ -83,6 +83,9 @@ void postorder_walk(Node* start, Op op) {
 	}
 }
 
+// iterators
+// full traversal takes O(n) time and O(1) space
+// traverse at most 2(n - 1) edges, where n is # nodes
 // non-const bidirectional iterator
 template <typename Node>
 struct Tree_iterator {
