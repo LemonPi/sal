@@ -102,7 +102,6 @@ struct Tree_iterator {
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 };
-
 // const bidirectional iterator
 template <typename Node>
 struct Tree_const_iterator {
@@ -115,9 +114,43 @@ struct Tree_const_iterator {
 	void operator++() {cur = tree_successor(cur);}
 	void operator--() {cur = tree_predecessor(cur);}
 	Node operator*() {return *cur;}
-	NP const operator->() {return cur;}
+	const NP operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
+};
+
+// adjacent iterator (expected of all graphs)
+// iterators from left to right if they exist
+template <typename Node>
+struct Tree_adj_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_adj_iterator<Node>&;
+
+	NP cur;
+
+	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
+	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
+	Node& operator*() {return *cur;}
+	NP operator->() {return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}	
+};
+// const version
+template <typename Node>
+struct Tree_adj_const_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_adj_const_iterator<Node>&;
+
+	const NP cur;
+
+	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
+	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
+	Node operator*() {return *cur;}
+	const NP operator->() {return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}	
 };
 
 template <typename Node>
@@ -358,8 +391,11 @@ protected:
 
 
 public:
-	using Iter = Tree_iterator<Node>;
-	using cIter = Tree_const_iterator<Node>;
+	using iterator = Tree_iterator<Node>;
+	using const_iterator = Tree_const_iterator<Node>;
+	using adjacent_iterator = Tree_adj_iterator<Node>;
+	using adjacent_const_iterator = Tree_adj_iterator<Node>;
+
 	Tree() = default;
 	Tree(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -378,14 +414,37 @@ public:
 		if (node != Node::nil) rb_delete(node);
 	}
 
-	Iter find(T key) 		{return Iter{tree_find(root, key)};}
-	cIter find(T key) const {return cIter{tree_find(root, key)};}
+	iterator find(T key) 			 {return iterator{tree_find(root, key)};}
+	const_iterator find(T key) const {return const_iterator{tree_find(root, key)};}
 
 	// iterator
-	Iter begin() 		{return Iter{tree_min(root)};}
-	cIter begin() const {return cIter{tree_min(root)};}
-	Iter end() 			{return Iter{Node::nil};}
-	cIter end() const 	{return cIter{Node::nil};}
+	iterator begin() 				{return iterator{tree_min(root)};}
+	const_iterator begin() const 	{return const_iterator{tree_min(root)};}
+	iterator end() 					{return iterator{Node::nil};}
+	const_iterator end() const 		{return const_iterator{Node::nil};}
+
+	// adjacent iterators for compatibility with graph algorithms
+	// assumes node is in tree
+	std::pair<adjacent_iterator, adjacent_iterator> adjacent(NP node) {
+		// begins on the first valid node, or nil
+		if (node->left != Node::nil) return {{node->left}, {Node::nil}};
+		else return {{node->right}, {Node::nil}};
+	}
+	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent(NP node) const {
+		if (node->left != Node::nil) return {{node->left}, {Node::nil}};
+		else return {{node->right}, {Node::nil}};
+	}
+	// overloaded version for data
+	std::pair<adjacent_iterator, adjacent_iterator> adjacent(T data) {
+		NP node {tree_find(root, data)};
+		if (node->left != Node::nil) return {{node->left}, {Node::nil}};
+		else return {{node->right}, {Node::nil}};
+	}
+	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent(T data) const {
+		NP node {tree_find(root, data)};
+		if (node->left != Node::nil) return {{node->left}, {Node::nil}};
+		else return {{node->right}, {Node::nil}};
+	}	
 
 	// traversals, Op is a function that performs a function on a NP
 	void print() const {

@@ -6,6 +6,7 @@
 #include "data/list.h"
 #include "data/interval.h"
 #include "data/graph.h"
+#include "data/graph/search.h"
 
 using namespace std;
 using namespace sal;
@@ -183,9 +184,37 @@ void test_directed_graph() {
 	for (auto v = w.begin(); v != w.end(); ++v)
 		if (!w.vertex(*v)) std::cout << "FAILED...Graph vertex iteration\n";
 
+}
+
+void test_bfs() {
 	sal::graph<char> d {{'v','r'},{'r','s'},{'s','w'},{'w','t'},{'t','x'},{'w','x'},{'t','u'},
 						{'x','u'},{'x','y'},{'u','y'}};
-	std::cout << "from s to u: " << sal::bfs(d, 's', 'u') << std::endl;
+
+	// property breadth first tree linked by each element's parent attribute
+	auto property = sal::bfs(d, 's');
+	for (char parent = 'u'; ; parent = property[parent].parent) {
+		std::cout << parent;
+		if (parent == 's') {std::cout << std::endl; break;}
+		std::cout << " <- ";
+	}
+	if (property['u'].distance != 3) std::cout << "FAILED...Breadth first search\n";
+}
+
+void test_dfs() {
+	sal::digraph<char> e {{'u','v'},{'u','x'},{'x','v'},{'v','y'},{'y','x'},
+						{'w','y'},{'w','z'},{'z','z'}};
+	auto dfs_property = sal::dfs(e);
+	std::map<char, std::pair<size_t, size_t>> correct_timestamps;
+	correct_timestamps['u'] = {1, 8};
+	correct_timestamps['v'] = {2, 7};
+	correct_timestamps['w'] = {9, 12};
+	correct_timestamps['x'] = {4, 5};
+	correct_timestamps['y'] = {3, 6};
+	correct_timestamps['z'] = {10, 11};
+	for (auto& pair : dfs_property) {
+		if (correct_timestamps[pair.first] !=  std::make_pair(pair.second.start, pair.second.finish))
+			std::cout << "FAILED...Depth first search\n";
+	}
 }
 
 void test_matrix() {
@@ -206,7 +235,9 @@ int main() {
 	// test_interval_set();
 	// test_treap();
 	// test_list();
-	test_undirected_graph();
-	test_directed_graph();
+	// test_undirected_graph();
+	// test_directed_graph();
 	// test_matrix();
+	test_bfs();
+	test_dfs();
 }

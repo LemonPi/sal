@@ -128,8 +128,8 @@ class Order_augment : public Tree<Node> {
 	}
 
 public:
-	using Iter  = typename Tree<Node>::Iter;
-	using cIter = typename Tree<Node>::cIter;
+	using iterator  = typename Tree<Node>::iterator;
+	using const_iterator = typename Tree<Node>::const_iterator;
 	Order_augment() = default;
 	Order_augment(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -146,15 +146,9 @@ public:
 	}
 
 	// order statistics methods interface
-	Iter select(size_t rank) {
-		return Iter{os_select(root, rank)};
-	}
-	cIter select(size_t rank) const {
-		return cIter{os_select(root, rank)};
-	}	
-	size_t rank(NP node) {
-		return os_rank(node);
-	}
+	iterator select(size_t rank) 			 {return iterator{os_select(root, rank)};}
+	const_iterator select(size_t rank) const {return const_iterator{os_select(root, rank)};}
+	size_t rank(NP node) const {return os_rank(node);}
 
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->size << ')' << ' ';});

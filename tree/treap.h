@@ -113,8 +113,8 @@ protected:
 	}
 
 public:
-	using Iter = Tree_iterator<Node>;
-	using cIter = Tree_const_iterator<Node>;
+	using iterator = Tree_iterator<Node>;
+	using const_iterator = Tree_const_iterator<Node>;
 	Treap() = default;
 	Treap(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
@@ -133,7 +133,7 @@ public:
 		if (node != Node::nil) treap_delete(node);
 	}
 
-	Iter find(T key) {
+	iterator find(T key) {
 		NP found {tree_find(root,key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
@@ -141,13 +141,13 @@ public:
 			// fix any min-heap violations
 			heap_fix_up(found);
 		}
-		return Iter{found};
+		return iterator{found};
 	}	
 	// iterators
-	Iter begin() 		{return Iter{tree_min(root)};}
-	cIter begin() const {return cIter{tree_min(root)};}
-	Iter end() 			{return Iter{Node::nil};}
-	cIter end() const 	{return cIter{Node::nil};}
+	iterator begin() 			 {return iterator{tree_min(root)};}
+	const_iterator begin() const {return const_iterator{tree_min(root)};}
+	iterator end() 				 {return iterator{Node::nil};}
+	const_iterator end() const 	 {return const_iterator{Node::nil};}
 
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->priority << ')' << ' ';});

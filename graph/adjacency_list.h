@@ -66,13 +66,14 @@ struct Adjacent_const_iterator {
 	V dest() {return cur->first;}
 	int weight() {return cur->second;}
 };
+
 // iterate over vertices of a graph
 // for adjacency lists just a wrapper around map's iterator
 template <typename Iter>
 struct Vertex_iterator {
 	using CR = const Vertex_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
-	using Adj_iter = Adjacent_iterator<typename Iter::value_type::second_type::iterator>;
+	using adjacent_iterator = Adjacent_iterator<typename Iter::value_type::second_type::iterator>;
 	Iter cur;
 
 	void operator++() {++cur;}
@@ -80,7 +81,7 @@ struct Vertex_iterator {
 	V operator*() {return cur->first;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
-	std::pair<Adj_iter, Adj_iter> adjacent() {
+	std::pair<adjacent_iterator, adjacent_iterator> adjacent() {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}
 };
@@ -88,7 +89,7 @@ template <typename Iter>
 struct Vertex_const_iterator {
 	using CR = const Vertex_const_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
-	using Adj_citer = Adjacent_const_iterator<typename Iter::value_type::second_type::const_iterator>;
+	using adjacent_const_iterator = Adjacent_const_iterator<typename Iter::value_type::second_type::const_iterator>;
 	Iter cur;
 
 	void operator++() {++cur;}
@@ -96,7 +97,7 @@ struct Vertex_const_iterator {
 	V operator*() {return cur->first;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
-	std::pair<Adj_citer, Adj_citer> adjacent() const {
+	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent() const {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}
 };
@@ -112,10 +113,13 @@ protected:
 	using Adj = std::map<V, Edges>;
 	Adj adj;
 public:
-	using Adj_iter = Adjacent_iterator<typename Edges::iterator>;
-	using Adj_citer = Adjacent_const_iterator<typename Edges::const_iterator>;
-	using V_iter = Vertex_iterator<typename Adj::iterator>;
-	using V_citer = Vertex_const_iterator<typename Adj::const_iterator>;
+	using vertex_type = V;
+	using adjacent_iterator = Adjacent_iterator<typename Edges::iterator>;
+	using adjacent_const_iterator = Adjacent_const_iterator<typename Edges::const_iterator>;
+	using iterator = Vertex_iterator<typename Adj::iterator>;
+	using const_iterator = Vertex_const_iterator<typename Adj::const_iterator>;
+	using reverse_iterator = Vertex_iterator<typename Adj::reverse_iterator>;
+	using const_reverse_iterator = Vertex_iterator<typename Adj::const_reverse_iterator>;
 	// constructors
 	Adjacency_list() = default;
 	Adjacency_list(const std::initializer_list<std::pair<V, V>>& l) {
@@ -164,23 +168,27 @@ public:
 		return (v_itr == adj.end())? 0 : v_itr->second.size();
 	}
 	// begin and end
-	std::pair<Adj_iter, Adj_iter> adjacent(V v) {
+	std::pair<adjacent_iterator, adjacent_iterator> adjacent(V v) {
 		auto v_itr = adj.find(v);
 		if (v_itr != adj.end()) 
 			return {{v_itr->second.begin()}, {v_itr->second.end()}};
 		else return {{},{}};
 	}	
-	std::pair<Adj_citer, Adj_citer> adjacent(V v) const {
+	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent(V v) const {
 		auto v_itr = adj.find(v);
 		if (v_itr != adj.end()) 
 			return {{v_itr->second.begin()}, {v_itr->second.end()}};
 		else return {{},{}};
 	}
 	// vertex iteration
-	V_iter begin() 			{return {adj.begin()};}
-	V_iter end() 			{return {adj.end()};}
-	V_citer begin() const 	{return {adj.begin()};}
-	V_citer end() const 	{return {adj.end()};}
+	iterator begin() 			 {return {adj.begin()};}
+	iterator end() 				 {return {adj.end()};}
+	const_iterator begin() const {return {adj.begin()};}
+	const_iterator end() const   {return {adj.end()};}
+	reverse_iterator rbegin() 			 	{return {adj.rbegin()};}
+	reverse_iterator rend() 				{return {adj.rend()};}
+	const_reverse_iterator rbegin() const 	{return {adj.rbegin()};}
+	const_reverse_iterator rend() const  	{return {adj.rend()};}
 
 
 	V min_vertex() const {
@@ -217,8 +225,11 @@ template <typename V = int, typename Edges = std::map<V, int>>
 class Adjacency_list_directed : public Adjacency_list<V, Edges> {
 	using Adjacency_list<V, Edges>::adj;
 public:
-	using Adj_iter = typename Adjacency_list<V, Edges>::Adj_iter;
-	using Adj_citer = typename Adjacency_list<V, Edges>::Adj_citer;
+	using vertex_type = V;
+	using adjacent_iterator = typename Adjacency_list<V, Edges>::adjacent_iterator;
+	using adjacent_const_iterator = typename Adjacency_list<V, Edges>::adjacent_const_iterator;
+	using iterator = typename Adjacency_list<V, Edges>::iterator;
+	using const_iterator = typename Adjacency_list<V, Edges>::const_iterator;
 	// constructors
 	Adjacency_list_directed() = default;
 	Adjacency_list_directed(const std::initializer_list<std::pair<V, V>>& l) {
