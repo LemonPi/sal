@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <iostream>
+#include <list>
+#include <string>
 #include "data/matrix.h"
 #include "data/heap.h"
 #include "data/tree.h"
@@ -215,6 +217,21 @@ void test_dfs() {
 		if (correct_timestamps[pair.first] !=  std::make_pair(pair.second.start, pair.second.finish))
 			std::cout << "FAILED...Depth first search\n";
 	}
+
+}
+
+void test_topological_sort() {
+	// directed edge (u,v) means u must happen before v
+	sal::digraph<std::string> g {{"undershorts", "pants"}, {"undershorts", "shoes"}, {"pants", "belt"},
+			{"pants", "shoes"}, {"socks", "shoes"}, {"shirt", "belt"}, {"shirt", "tie"}, {"tie", "jacket"},
+			{"belt", "jacket"}};
+	g.add_vertex("watch");
+
+	std::list<std::string> topo_order;
+	// give a possible ordering of events
+	sal::topological_sort(g, std::front_inserter(topo_order));
+
+	for (const std::string& v : topo_order) std::cout << v << ' ';
 }
 
 void test_matrix() {
@@ -238,6 +255,7 @@ int main() {
 	// test_undirected_graph();
 	// test_directed_graph();
 	// test_matrix();
-	test_bfs();
-	test_dfs();
+	// test_bfs();
+	// test_dfs();
+	test_topological_sort();
 }
