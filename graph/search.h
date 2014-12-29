@@ -3,6 +3,8 @@
 #include <stack>
 #include <unordered_map>
 #include "adjacency_list.h"
+#define IS_WHITE(x) (property[x].start == unsigned_infinity)
+#define IS_GREY(x) (property[x].finish == 0)
 
 namespace sal {
 
@@ -103,6 +105,10 @@ struct Graph_visitor {
 	void discover_vertex(typename Graph::vertex_type, const Graph&) {}
 	template <typename Graph>
 	void finish_vertex(typename Graph::vertex_type, const Graph&) {}
+	template <typename Graph>
+	void back_edge(typename Graph::vertex_type, const Graph&) {}
+	template <typename Graph>
+	void forward_or_cross_edge(typename Graph::vertex_type, const Graph&) {}
 };
 
 // depth first search, used usually in other algorithms
@@ -124,22 +130,26 @@ VDP<Graph> dfs(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 
 	while (!exploring.empty()) {
 		V cur {exploring.top()};
-		if (property[cur].start == unsigned_infinity) {
+
+		// tree edge, first exploration on (u,v)
+		if (IS_WHITE(cur)) {
 			property[cur].start = ++explore_time;
 			visitor.discover_vertex(cur, g);
 		}
-
+		
 		bool fully_explored {true};
 		auto edges = g.adjacent(cur);
 		for (auto adj = edges.first; adj != edges.second; ++adj) {
 			// check if any neighbours haven't been explored
-			if (property[adj.dest()].start == unsigned_infinity) {
+			if (IS_WHITE(adj.dest())) {
 				property[adj.dest()].start = ++explore_time;
 				property[adj.dest()].parent = cur;
 				exploring.push(adj.dest());
 				fully_explored = false;	// still have unexplored neighbours
 				break;		// only push 1 neighbour to achieve depth first
 			}
+			else if (IS_GREY(adj.dest())) visitor.back_edge(adj.dest(), g);
+			else visitor.forward_or_cross_edge(adj.dest(), g);
 		}
 		if (fully_explored) {
 			exploring.pop();
@@ -153,49 +163,56 @@ VDP<Graph> dfs(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 	return std::move(property);
 }
 
-// depth first search only on a starting vertex
+// recursive version of dfs, much simpler, but can blow up the stack
 template <typename Graph, typename Visitor = Graph_visitor>
-VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Graph_visitor{}) {
-	using V = typename Graph::vertex_type;
+VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 	VDP<Graph> property;
-	std::stack<V> exploring;
 	// no need to reverse traverse now
 	for (auto v = g.begin(); v != g.end(); ++v)
 		property[*v] = {unsigned_infinity, 0, *v};
 
-	exploring.push(s);
 	size_t explore_time {0};
 
-	while (!exploring.empty()) {
-		V cur {exploring.top()};
-		if (property[cur].start == unsigned_infinity) {
-			property[cur].start = ++explore_time;
-			visitor.discover_vertex(cur, g);
-		}
+	for (auto v = g.begin(); v != g.end(); ++v) 
+		if (IS_WHITE(*v))
+			dfs_visit(g, *v, property, explore_time, visitor);
 
-		bool fully_explored {true};
-		auto edges = g.adjacent(cur);
-		for (auto adj = edges.first; adj != edges.second; ++adj) {
-			// check if any neighbours haven't been explored
-			if (property[adj.dest()].start == unsigned_infinity) {
-				property[adj.dest()].start = ++explore_time;
-				property[adj.dest()].parent = cur;
-				exploring.push(adj.dest());
-				fully_explored = false;	// still have unexplored neighbours
-				break;		// only push 1 neighbour to achieve depth first
-			}
-		}
-		if (fully_explored) {
-			exploring.pop();
-			if (property[cur].finish == 0) {// default value
-				property[cur].finish = ++explore_time;
-				visitor.finish_vertex(cur, g);
-			}
-		}
-	}
-
-	return std::move(property);
+	return property;
 }
+// explore only 1 vertex
+template <typename Graph, typename Visitor = Graph_visitor>
+VDP<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& visitor = Graph_visitor{}) {
+	VDP<Graph> property;
+	// no need to reverse traverse now
+	for (auto v = g.begin(); v != g.end(); ++v)
+		property[*v] = {unsigned_infinity, 0, *v};
+
+	size_t explore_time {0};
+
+	dfs_visit(g, u, property, explore_time, visitor);
+
+	return property;
+}
+
+template <typename Graph, typename Visitor, typename Property_map>
+void dfs_visit(const Graph& g, typename Graph::vertex_type u, Property_map& property, size_t& explore_time, Visitor& visitor) {
+	// discover vertex
+	property[u].start = ++explore_time;
+	visitor.discover_vertex(u, g);
+
+	auto edges = g.adjacent(u);
+	for (auto adj = edges.first; adj != edges.second; ++adj) {
+		if (IS_WHITE(adj.dest())) {
+			property[adj.dest()].parent = u;
+			dfs_visit(g, adj.dest(), property, explore_time, visitor);
+		}
+		else if (IS_GREY(adj.dest())) visitor.back_edge(adj.dest(), g);
+		else visitor.forward_or_cross_edge(adj.dest(), g);
+	}
+	// finish vertex
+	property[u].finish = ++explore_time;
+	visitor.finish_vertex(u, g);
+}	
 
 // for directed acyclic graph (dag)
 // orders all vertices so that parent vertices are always before children
@@ -204,9 +221,11 @@ template <typename Output_iter>
 struct Topological_visitor : public Graph_visitor {
 	Output_iter out;
 	Topological_visitor(Output_iter o) : out{o} {}
-	
+
 	template <typename Graph>
 	void finish_vertex(typename Graph::vertex_type u, const Graph&) {*out++ = u;}
+	template <typename Graph>
+	void back_edge(typename Graph::vertex_type u, const Graph&) {std::cout << "back edge on " << u << std::endl;}
 };
 
 template <typename Graph, typename Output_iter>

@@ -232,6 +232,15 @@ void test_topological_sort() {
 	sal::topological_sort(g, std::front_inserter(topo_order));
 
 	for (const std::string& v : topo_order) std::cout << v << ' ';
+	std::cout << std::endl;
+
+	sal::digraph<char> h {{'m','q'},{'m','r'},{'m','x'},{'n','q'},{'n','u'},{'n','o'},{'o','r'},{'o','v'},{'o','s'},
+						  {'p','o'},{'p','s'},{'p','z'},{'q','t'},{'r','u'},{'r','y'},{'s','r'},{'u','t'},{'v','x'},
+						  {'v','w'},{'w','z'},{'y','v'}};
+
+	std::list<char> topo_order2;
+	sal::topological_sort(h, std::front_inserter(topo_order2));
+	for (char v : topo_order2) std::cout << v << ' ';
 }
 
 void test_matrix() {
@@ -258,4 +267,5 @@ int main() {
 	// test_bfs();
 	// test_dfs();
 	test_topological_sort();
+
 }
