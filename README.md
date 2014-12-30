@@ -5,10 +5,12 @@ A header only library containing algorithms and data structures implemented <b>s
 
 Features
 ---
-- decoupled algorithms so most files are standalone (most functions are as well!)
-  - contest friendly - can copy paste most functions in without pulling in an entire library
-- simple implementation of efficient algorithms; not over engineeringed
-  - learning friendly - approachable simplicity
+### decoupled algorithms so most files are standalone 
+#### contest friendly - paste specific functions in without the rest of the library
+
+### simple implementation of efficient algorithms 
+#### not over engineeringed
+#### learning friendly - approachable simplicity
 
 Motivation
 ---
@@ -19,6 +21,9 @@ It wasn't the best resource to learn the concepts from, and you couldn't (in mos
 In response, the focus for this library is on the concepts rather than the implementation
 
 Table of contents
+===
+For examples, look at algotest.cpp and datatest.cpp
+Algorithms
 ---
 ###### sal/algo/numerics.h --- numerics
 - modular exponentiation
@@ -55,5 +60,70 @@ Table of contents
 - suffix array (data structure for substring searches)
 
 ###### sal/algo/sort.h --- comparison, distributive, and hybrid sorts
+- partition
 - bubble sort
-- 
+- insertion sort
+- merge sort
+- quick sort
+- heap sort
+- counting sort
+- radix sort
+- tim sort
+- patience sort
+
+###### sal/algo/string.h --- edit distances
+- levenshtein distance
+
+###### sal/algo/factorize.h --- factorization of integers
+- prime factorize
+- number of total factors
+- sum of total factors
+
+###### sal/algo/utility.h --- utility and testing functions
+- random integer generation
+- timer
+- perturb a sequence (soft random shuffle)
+
+
+Data structures
+---
+###### sal/data/list.h --- basic linked list
+
+###### sal/data/matrix.h --- 2D matrix
+- square identities
+- random matrices
+- efficient multiplication of a sequence of matrices
+- resizable
+
+###### sal/data/infint.h --- infinity precision integers (Sercan Tutar's)
+
+###### sal/data/tree.h --- red black tree and augmentations of it
+- easily extensible base RB tree
+- node iterator
+- order statistic tree augmentation
+- treap
+- order statistic tree
+
+###### sal/data/interval.h --- interval tree
+
+###### sal/data/graph.h --- directed and undirected graphs
+- adjacency matrix (not really supported)
+- adjacency list
+- vertex iterator
+- adjacency iterator
+
+###### sal/data/graph/search.h --- graph searches
+- breadth first search
+- depth first search
+- recursive depth first search
+- visitors for custom actions at certain points of DFS
+
+###### sal/data/utility.h --- important graph algorithms
+- topological sort
+- check for cycle
+- transpose of graph
+- strongly connected components
+
+
+
+
