@@ -3,15 +3,18 @@ SAL - simple algorithms library
 
 A header only library containing algorithms and data structures implemented <b>simply and efficiently</b>.
 
+<br>
 Features
 ---
 ### decoupled algorithms so most files are standalone 
 #### contest friendly - paste specific functions in without the rest of the library
 
+<br>
 ### simple implementation of efficient algorithms 
 #### not over engineeringed
 #### learning friendly - approachable simplicity
 
+<br>
 Motivation
 ---
 I enjoyed some features of the boost library (namely variant), but found the library to be too cumbersome as a whole.  
