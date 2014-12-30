@@ -1,27 +1,30 @@
-SAL - simple algorithms library
+SAL - simple algorithms and datastructures library
 ===
 
-A header only library containing algorithms and data structures implemented <b>simply and efficiently</b>.
+A header only library containing efficient algorithms and data structures implemented simply.  
+Simplicity here refers to how close the implementation matches the core concepts of each algorithm,
+rather than the triviality of each algorithm.
 
 <br>
 Features
 ---
 decoupled algorithms so most files are standalone 
-- contest friendly - paste specific functions in without the rest of the library
+- contest friendly 
+- paste specific functions in without the rest of the library
 
 <br>
 simple implementation of efficient algorithms 
-- not over engineeringed
-- learning friendly - approachable simplicity
+- learning friendly
+- engineered for readability
 
 <br>
 Motivation
 ---
-I enjoyed some features of the boost library (namely variant), but found the library to be too cumbersome as a whole.  
-Using the library in a set up environment was fine, but it was impossible to understand conceptual slices of it.  
-It wasn't the best resource to learn the concepts from, and you couldn't (in most cases) use parts of it for contests.  
+I enjoyed some features of the boost library (namely variant), but found the library too cumbersome as a whole.  
+Using it in a set up environment was fine, but it was impossible to understand conceptual slices of it.  
+It wasn't the best resource to learn the concepts from, and you couldn't (in most cases) use functions from it for contests.  
 
-In response, the focus for this library is on the concepts rather than the implementation
+The focus for this library is on representing the concepts 
 
 Table of contents
 ===
@@ -167,7 +170,38 @@ Matrix<int> A = mul(mats);
 bool g = is_square(21489798124);
 ```
 ###### sal/algo/perm.h --- <a name="perm">permutation and combination</a>
+```C++
+std::string words {"Hello"};
+// modifies the sequence without return
+// k is from 0 to s.size()! - 1
+perm(words, 1);
+// word <- "oHell"
 
+std::vector<string> jumbled_words = allperms(words);
+// 120 permutations of "Hello"
+
+std::set<string> distinct_jumbled_words = allperms_distinct(words);
+// 60 distinct permutations of "Hello"
+
+
+
+std::vector<int> ints {1,2,3,4,5,6};
+
+std::set<int> int_add {combine(ints, 
+	[](int a, int b){return a + b;})};
+// 2 3 4 5 6 7 8 9 10 11 12 handshake by adding
+
+std::set<int> int_add_odd {combine(ints,
+	[](int a, int b){return a + b;},
+	[](int a, int b){return (a & 1) && (b & 1);})};
+// 2 4 6 8 10 handshake by adding odd elements
+
+
+
+std::vector<int> coins {1, 2, 5, 10, 20, 50, 100, 200};
+int combos = count_combos(coins, 200);
+// ways to sum up to 200 using coins = 73682
+```
 ###### sal/algo/prime.h --- <a name="prime">prime generation and manipulation</a>
 
 ###### sal/algo/search.h --- <a name="search">basic searching, substring matching, and finding longest common features</a>
