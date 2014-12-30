@@ -28,7 +28,7 @@ Table of contents
 For examples, look at algotest.cpp and datatest.cpp
 Algorithms
 ---
-###### [sal/algo/numerics.h --- numerics](#numerics)
+###### [sal/algo/numerics.h --- numeric](#numeric)
 - modular exponentiation
 - integer exponentiation
 - fibonacci generation
@@ -129,7 +129,43 @@ Data structures
 
 Example usage
 ===
-###### sal/algo/numerics.h --- <a name="numerics">numerics</a>
+```namespace sal``` will be used implicitely here
+###### sal/algo/numerics.h --- <a name="numeric">numeric</a>
+```C++
+// a <- 7^91 % 10 = 3
+int a = modular_pow(7, 91, 10); 
+
+// b <- 5^3 = 125
+int b = int_pow(5, 3);
+
+// c <- 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
+Infint c = fibonacci(1000);
+
+// repeating part of 1/7 in base 10 = 142857
+Infint d = make_cyclic(10, 7);
+
+// length of repeating part of 1/7 in base 10 = 6
+int e = cycle_length(10, 7);
+
+// greatest common denominator of 56 and 91 is 7
+unsigned int f = gcd(56, 91);
+
+// multiplies using optimal parenthesization
+// generate sequence of random matrices
+std::vector<Matrix<int>> mats;
+size_t row {30}, col {35};
+for (int i = 0; i != 100; ++i) {
+	mats.push_back(random_matrix<int>(row, col, 0, 50));
+	// next matrix's row must be prev matrix's col
+	row = col;
+	col = rand() % 100 + 5;	// between 5 - 105
+}
+
+Matrix<int> A = mul(mats);
+
+// check for perfect square <- false
+bool g = is_square(21489798124);
+```
 ###### sal/algo/perm.h --- <a name="perm">permutation and combination</a>
 
 ###### sal/algo/prime.h --- <a name="prime">prime generation and manipulation</a>
