@@ -3,6 +3,34 @@
 
 namespace sal {
 
+// O(h) = O(lgn) time for selecting rank-th smallest element, start at 1
+template <typename Node>
+const Node* os_select(const Node* start, size_t rank) {
+	while (rank > 0) {
+		size_t cur_rank {start->left->size + 1};
+		if (cur_rank == rank) return start;
+		else if (rank < cur_rank) start = start->left;
+		else {
+			start = start->right;
+			rank -= cur_rank;
+		}
+	}
+	return Node::nil;
+}
+template <typename Node>
+Node* os_select(Node* start, size_t rank) {
+	while (rank > 0) {
+		size_t cur_rank {start->left->size + 1};
+		if (cur_rank == rank) return start;
+		else if (rank < cur_rank) start = start->left;
+		else {
+			start = start->right;
+			rank -= cur_rank;
+		}
+	}
+	return Node::nil;
+}
+
 template <typename Node>
 class Order_augment : public Tree<Node> {
 
@@ -15,19 +43,6 @@ class Order_augment : public Tree<Node> {
 	using Tree<Node>::rb_delete_fixup;
 
 	// order statistics operations
-	NP os_select(NP start, size_t rank) const {
-		while (rank > 0) {
-			size_t cur_rank {start->left->size + 1};
-			if (cur_rank == rank) return start;
-			else if (rank < cur_rank) start = start->left;
-			else {
-				start = start->right;
-				rank -= cur_rank;
-			}
-		}
-		return Node::nil;
-	}
-
 	size_t os_rank(NP node) const {
 		size_t rank {node->left->size + 1};
 		while (node != root) {
@@ -146,6 +161,7 @@ public:
 	}
 
 	// order statistics methods interface
+	iterator operator[](size_t rank)		 {return iterator{os_select(root, rank)};}
 	iterator select(size_t rank) 			 {return iterator{os_select(root, rank)};}
 	const_iterator select(size_t rank) const {return const_iterator{os_select(root, rank)};}
 	size_t rank(NP node) const {return os_rank(node);}
