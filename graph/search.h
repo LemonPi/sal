@@ -11,6 +11,7 @@ namespace sal {
 /* algorithms expects Graph to have: 
 	vertex iterators in begin() and end() (and reverse iterators in rbegin(), rend())
   		* gives vertex name of type V
+  		begin() and end() to give adjacent iterators
 
   	adjacent iterator pair in adjacent(V)
   		* gives vertex name of type V, the destination vertex
@@ -125,6 +126,20 @@ struct Graph_visitor {
 	void forward_or_cross_edge(typename Graph::vertex_type, const Graph&) {}
 };
 
+// for DFS on only 1 source vertex
+template <typename Graph>
+struct Graph_single_visitor : public Graph_visitor {
+	using V = typename Graph::vertex_type;
+	V source;
+	Graph_single_visitor(V s) : source{s} {}
+	template <typename Property_map>
+	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
+		for (auto v = g.rbegin(); v != g.rend(); ++v)
+			property[*v] = {unsigned_infinity, 0, *v};
+		return {source};
+	}
+};
+
 // depth first search, used usually in other algorithms
 // explores all vertices of a graph, produces a depth-first forest
 template <typename Graph, typename Visitor = Graph_visitor>
@@ -168,6 +183,11 @@ VDP<Graph> dfs(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 	}
 
 	return std::move(property);
+}
+// overload for specifying a source, can't use other visitors
+template <typename Graph>
+VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s) {
+	return dfs(g, Graph_single_visitor<Graph>{s});
 }
 
 // recursive version of dfs, much simpler, but can blow up the stack

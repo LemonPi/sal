@@ -63,7 +63,6 @@ struct Inorder_finish_visitor : public Graph_visitor {
 
 };
 
-
 template <typename Graph>
 using Connected_set =  std::vector<std::unordered_set<typename Graph::vertex_type>>;
 

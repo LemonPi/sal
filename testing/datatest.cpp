@@ -283,5 +283,5 @@ int main() {
 	// test_dfs();
 	// test_topological_sort();
 	// test_transpose();
-	test_strongly_connected();
+	// test_strongly_connected();
 }
