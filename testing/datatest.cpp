@@ -2,45 +2,44 @@
 #include <iostream>
 #include <list>
 #include <string>
-#include "data/matrix.h"
-#include "data/heap.h"
-#include "data/tree.h"
-#include "data/list.h"
-#include "data/interval.h"
-#include "data/graph.h"
-#include "data/graph/search.h"
-#include "data/graph/utility.h"
+#include "../matrix.h"
+#include "../heap.h"
+#include "../tree.h"
+#include "../list.h"
+#include "../interval.h"
+#include "../graph.h"
+#include "../graph/search.h"
+#include "../graph/utility.h"
 
 using namespace std;
-using namespace sal;
 
 
 void test_list() {
-	Basic_list<int> l {1, 4, 2, 5, 3, 7, 6};
+	sal::Basic_list<int> l {1, 4, 2, 5, 3, 7, 6};
 	cout << l;
 }
 
 void test_mul() {
-	Matrix<int> A {{2, 5, 6},
+	sal::Matrix<int> A {{2, 5, 6},
 				   {3, 4, -3},
 				   {7, 8, 0}};
-	Matrix<int> B {{-1, 1},
+	sal::Matrix<int> B {{-1, 1},
 				   {5, -2},
 				   {4, 2}};
-	if (A*B != Matrix<int>{{47, 4},{5,-11},{33,-9}}) 
+	if (A*B != sal::Matrix<int>{{47, 4},{5,-11},{33,-9}}) 
 		cout << "FAILED...Matrix multiplication\n";
 	
 }
 
 void test_pow() {
-	Matrix<int> F {{1, 1},
+	sal::Matrix<int> F {{1, 1},
 				   {1, 0}};
-	if (F.pow(5) != Matrix<int>{{8, 5}, {5, 3}}) 
+	if (F.pow(5) != sal::Matrix<int>{{8, 5}, {5, 3}}) 
 		cout << "FAILED...Matrix exponentiation\n";
 }
 
 void test_heap() {
-	Heap<int> h {3, 4, 6, 5, 1, 8, 11, 12};
+	sal::Heap<int> h {3, 4, 6, 5, 1, 8, 11, 12};
 	if (!h.is_maxheap()) cout << "FAILED...Heap construction\n";
 }
 
@@ -103,7 +102,7 @@ void test_interval_set() {
 	sal::Interval_set<int> t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
 
 	auto interval = t.find({22, 25});
-	if (*interval != Interval<int>{15,23}) cout << "FAILED...Interval set find\n";
+	if (*interval != sal::Interval<int>{15,23}) cout << "FAILED...Interval set find\n";
 
 	interval = t.find(11, 14);
 	if (interval != t.end()) cout << "FAILED...Interval set find\n";
@@ -259,7 +258,7 @@ void test_strongly_connected() {
 }
 
 void test_matrix() {
-	Matrix<int> id3 {identity<int>(3)};
+	sal::Matrix<int> id3 {sal::identity<int>(3)};
 	cout << id3 << endl;
 	id3.resize(4,5);
 	cout << id3 << endl;

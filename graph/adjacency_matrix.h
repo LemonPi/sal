@@ -1,7 +1,7 @@
 #pragma once
 #include <map>
 #include <unordered_map>
-#include "data/matrix.h"
+#include "../matrix.h"
 
 namespace sal {
 

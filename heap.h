@@ -5,6 +5,9 @@
 
 using namespace std;
 
+namespace sal {
+
+
 template <typename T>
 class Heap {	// maxheap parent greater than children
 	vector<T> elems;
@@ -58,4 +61,6 @@ void Heap<T>::build_maxheap() {
 template <typename T>
 bool Heap<T>::is_maxheap() {
 	return is_heap(elems.begin(), elems.end());
+}
+
 }

@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <initializer_list>
 #include <limits>	// numeric limits
-#include "algo/utility.h"	// Rand int
+#include "../algo/utility.h"	// Rand int
 
 using namespace std;
 
