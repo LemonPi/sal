@@ -6,13 +6,13 @@ A header only library containing algorithms and data structures implemented <b>s
 <br>
 Features
 ---
-### decoupled algorithms so most files are standalone 
-#### contest friendly - paste specific functions in without the rest of the library
+decoupled algorithms so most files are standalone 
+- contest friendly - paste specific functions in without the rest of the library
 
 <br>
-### simple implementation of efficient algorithms 
-#### not over engineeringed
-#### learning friendly - approachable simplicity
+simple implementation of efficient algorithms 
+- not over engineeringed
+- learning friendly - approachable simplicity
 
 <br>
 Motivation
