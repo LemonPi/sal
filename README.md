@@ -132,7 +132,8 @@ Data structures
 
 Example usage
 ===
-```namespace sal``` will be used implicitely here
+```namespace sal``` will be used implicitely here  
+functions that take iterator pairs are overloaded to take containers as well  
 ###### sal/algo/numerics.h --- <a name="numeric">numeric</a>
 ```C++
 // 7^91 % 10
@@ -484,7 +485,141 @@ id3.resize(2,2);
 ```
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
+```C++
+// Basic tree usage
+Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+// insert element
+t.insert(5);
+// erase element
+t.erase(1);
+// find element
+auto node = t.find(5);
+// const iterator to node holding 5
+t.find(11);
+// const iterator to end == t.end()
 
+
+// iteration over adjacent nodes (left to right)
+for (auto adjacent = node.begin(); adjacent != node.end(); ++adjacent)
+	std::cout << *adjacent << ' ';
+// * operator returns key
+
+
+// iteration over all nodes (in order)
+using Node = Basic_node<int>;
+std::for_each(t.begin(), t.end(), 
+	[](const Node& node){std::cout << node.key << ' ';});
+
+
+
+// Extending Tree for an augmented data structure
+// first step is creating a node
+/* requires
+	1. key element that can be compared using <
+	2. static node pointer nil, sentinel
+	3. parent, left, and right pointers initialized to nil
+	4. Color attribute, BLACK for nil and RED for non-nil
+*/
+template <typename T>
+struct Order_node {
+	static Order_node* nil;
+
+	using key_type = T;
+	T key;
+	Order_node *parent, *left, *right;
+	// # of descendent nodes including itself = left->size + right->size + 1
+	size_t size;	
+	Color color;
+	Order_node() : size{0}, color{Color::BLACK} {}	// sentinel construction
+	Order_node(T val) : key{val}, parent{nil}, left{nil}, right{nil}, size{1}, color{Color::RED} {}
+};
+
+template <typename T>
+Order_node<T>* Order_node<T>::nil {new Order_node{}};
+
+// Augmented tree need to publically inherit from Tree<Node>
+// it should use the following protected members from Tree<node>
+template <typename Node>
+class Order_augment : public Tree<Node> {
+
+	using NP = Node*;	// optional
+	using T = typename Node::key_type;	// optional
+	using Tree<Node>::root;
+	using Tree<Node>::rb_insert;
+	using Tree<Node>::transplant;
+	using Tree<Node>::rb_insert_fixup;
+	using Tree<Node>::rb_delete_fixup;
+
+// iterators can also be inherited from Tree
+	using iterator  = typename Tree<Node>::iterator;
+	using const_iterator = typename Tree<Node>::const_iterator;	
+
+// override specific virtual methods to maintain augmented property
+// tree_insert, rb_delete, rotate_left, and rotate_right
+	virtual void tree_insert(NP start, NP node) override {
+		NP parent {Node::nil};
+		while (start != Node::nil) {
+			// modification: simply increment size of each ancestor going down
+			++start->size;	
+			parent = start;
+			if (node->key < start->key) start = start->left;
+			else start = start->right;
+		}
+		node->parent = parent;
+		if (parent == Node::nil) root = node;
+		else if (node->key < parent->key) parent->left = node;
+		else parent->right = node;
+	}
+};
+
+// provide convenient user access
+template <typename T>
+using Order_tree = Order_augment<Order_node<T>>;
+
+
+// non-member functions that work on nodes only
+Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+using NP = Order_node<int>*;
+auto node = t.find(5);
+// const iterator
+
+// check if t is a valid RB tree, 0 is invalid, else returns blackheight
+// PRINTLINE macro is from utility.h
+PRINTLINE(t.valid());
+
+// get() on iterators return the raw node pointer
+tree_min(node.get());
+// node pointer to smallest node rooted at given node pointer
+// goes left as far as possible
+
+tree_max(node.get());
+// node pointer to largest node, symmetrical to tree_min
+
+tree_predecessor(node.get());
+// node pointer to next smallest node
+tree_successor(node.get());
+// node pointer to next largest node
+
+// traversals take NP root and an operation that acts on NP
+inorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
+preorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
+postorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
+
+
+
+// Order statistics tree usage (with t above)
+// selecting ith smallest
+t.select(4);
+t[4];
+// iterator to node holding 4th smallest (3)
+// select is overloaded on constness, operator[] is always non-const
+
+// check the rank of a node pointer
+auto node = t.find(5);
+t.rank(node.get());
+// size_t 6 (node holding 5 is 6th smallest node)
+
+```
 ###### sal/data/interval.h --- <a name="interval">interval tree</a>
 
 ###### sal/data/graph.h --- <a name="graph">directed and undirected graphs</a>
