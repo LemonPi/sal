@@ -135,53 +135,63 @@ Example usage
 ```namespace sal``` will be used implicitely here
 ###### sal/algo/numerics.h --- <a name="numeric">numeric</a>
 ```C++
-// a <- 7^91 % 10 = 3
+// 7^91 % 10
 int a = modular_pow(7, 91, 10); 
+// int 3
 
-// b <- 5^3 = 125
-int b = int_pow(5, 3);
 
-// c <- 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
+int_pow(5, 3);
+// int 125
+
+
 Infint c = fibonacci(1000);
+// Infint 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
 
-// repeating part of 1/7 in base 10 = 142857
-Infint d = make_cyclic(10, 7);
+// repeating part of 1/7 in base 10
+make_cyclic(10, 7);
+// Infint 142857
 
-// length of repeating part of 1/7 in base 10 = 6
-int e = cycle_length(10, 7);
+// length of repeating part of 1/7 in base 10
+cycle_length(10, 7);
+// int 6
 
-// greatest common denominator of 56 and 91 is 7
-unsigned int f = gcd(56, 91);
+// greatest common denominator
+gcd(56, 91);
+// unsigned int 7
 
-// multiplies using optimal parenthesization
-// generate sequence of random matrices
+
+// multiplies matrices using optimal parenthesization to minimize work
 std::vector<Matrix<int>> mats;
 size_t row {30}, col {35};
 for (int i = 0; i != 100; ++i) {
+	// generate sequence of random matrices
 	mats.push_back(random_matrix<int>(row, col, 0, 50));
 	// next matrix's row must be prev matrix's col
 	row = col;
 	col = rand() % 100 + 5;	// between 5 - 105
 }
+mul(mats);
+// Matrix<int> 
 
-Matrix<int> A = mul(mats);
-
-// check for perfect square <- false
-bool g = is_square(21489798124);
+// check for perfect square
+is_square(21489798124);
+// bool false
 ```
 ###### sal/algo/perm.h --- <a name="perm">permutation and combination</a>
 ```C++
 std::string words {"Hello"};
 // modifies the sequence without return
+// algorithms work on indexable sequences
 // k is from 0 to s.size()! - 1
 perm(words, 1);
-// word <- "oHell"
+// string "oHell"
 
-std::vector<string> jumbled_words = allperms(words);
-// 120 permutations of "Hello"
 
-std::set<string> distinct_jumbled_words = allperms_distinct(words);
-// 60 distinct permutations of "Hello"
+llperms(words);
+// vector<string> (120 permutations of "Hello")
+
+allperms_distinct(words);
+// set<string> (60 distinct permutations of "Hello")
 
 
 
@@ -200,48 +210,89 @@ std::set<int> int_add_odd {combine(ints,
 
 std::vector<int> coins {1, 2, 5, 10, 20, 50, 100, 200};
 int combos = count_combos(coins, 200);
-// ways to sum up to 200 using coins = 73682
+// size_t 73682 (ways to sum up to 200 using coins)
 ```
 ###### sal/algo/prime.h --- <a name="prime">prime generation and manipulation</a>
+```C++
+// keep a sieve object if continuous work with primes is needed
+using big_int = size_t;
+Sieve<big_int> sieve;
 
+while (true) sieve.next_prime();
+// generate infinite stream of primes (each of big_int)
+
+
+sieve.nth_prime(1000);
+// big_int 7919 (1000th prime)
+
+
+sieve.is_prime(sieve.nth_prime(420000));
+// bool true (the 4200000th prime is a prime!)
+
+
+sieve.count(1000000);
+// size_t 78498 primes below a million 
+
+
+sieve.closest_prime(50000);
+// big_int 49999
+sieve.next_prime(50000);
+// big_int 50021,
+
+
+sieve.primes_upto(1000000);
+// vector<big_int> (78498 primes that are under one million)
+
+
+totient(500);
+phi(500);
+// big_int 200 (200 numbers below 500 that are coprime with it)
+```
 ###### sal/algo/search.h --- <a name="search">basic searching, substring matching, and finding longest common features</a>
 ```C++
 std::vector<int> seq {1,3,12,14,15,18,20};
 // bin_search assumes sequence is in order and elements are comparable
 bin_search(seq.begin(), seq.end(), 12);
-// gives iterator to element 12
-bin_search(seq, 12);
-// same as above
+// iterator to element 12
+
 bin_search(seq.begin(), seq.end(), 17);
-// gives seq.end()
+// iterator seq.end()
 
 
-intersection({{1,3,5,6,7,8},{2,4,6,9,10},{3,4,5,6,10)}});
-// {6} only element shared by all sets
+std::vector<int> seq2 {1,3,5,6,7,8,20,32};
+std::vector<int> seq3 {2,3,6,9,20,32,45,55};
+intersection(std::set<vector<int>>{seq, seq2, seq3});
+// unordered_set {3, 20} (elements shared by all 3 sequences)
 
 
 std::string a {"It was the best of times..."};
 std::string b {"That's the best orange juice!"};
-lc_substring(a, b);
-// "the best o"
+lc_substr(a, b);
+// string "s the best o"
 
 lc_subseq(a, b);
-// "ts the best o ie"
+// string "as the best o ie"
 lc_subseq_len(a, b);
-// 16
+// size_t 16
 
 
-sub_match(a, "the best");
-// const iterator to 't' in a
+sub_match(a, std::string{"the best"});
+// const_iterator to 't' in a
 
 
-std::vector<int> v {632, 32, 31, 88, 11, 942, 5, 23};
+// find ith smallest element (1 is smallest)
+std::vector<int> v {632, 32, 31, 50, 88, 77, 942, 5, 23};
 select(v.begin(), v.end(), 4);
-select(v, 4);	// same as above
-// partitions v so that the 4th element (32) is in the right place and return iterator to it
+// iterator to 4th element (50)
 ```
 ###### sal/algo/sort.h --- <a name="sort">comparison, distributive, and hybrid sorts</a>
 ```C++
+std::vector<int> u {632, 32, 31, 88, 77, 942, 5, 23};
+partition(u.begin(), u.end());
+// iterator to pivot 77
+// 23 32 31 5 77 942 88 632 (all elements < 77 on left and > 77 on right)
+ 
+
 std::vector<int> v {randgen(1048576, 100000)};	// 2^20
 
 bub_sort(v.begin(), v.end());
@@ -267,13 +318,14 @@ qck_sort(v.begin(), v.end());
 // need to know maximum for counting sort, else uses the maximum bit of size
 rdx_sort(v.begin(), v.end(), 20);	// 20 bits needed for 2^20 max
 
-tim_sort(v.begin(), v.end()); break;
+tim_sort(v.begin(), v.end());
 ```
 
 ###### sal/algo/string.h --- <a name="string">edit distances</a>
 ```C++
+// # edit actions including insertion, deletion, or substitution to turn source into new
 levenshtein("Saturday", "Sunday");
-// 3 edit actions (insertion, deletion, or substitution)
+// size_t 3 
 ```
 
 ###### sal/algo/factorize.h --- <a name="factorize">factorization of integers</a>
