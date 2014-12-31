@@ -147,13 +147,16 @@ int_pow(5, 3);
 Infint c = fibonacci(1000);
 // Infint 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
 
+
 // repeating part of 1/7 in base 10
 make_cyclic(10, 7);
 // Infint 142857
 
+
 // length of repeating part of 1/7 in base 10
 cycle_length(10, 7);
 // int 6
+
 
 // greatest common denominator
 gcd(56, 91);
@@ -173,6 +176,7 @@ for (int i = 0; i != 100; ++i) {
 mul(mats);
 // Matrix<int> 
 
+
 // check for perfect square
 is_square(21489798124);
 // bool false
@@ -180,6 +184,7 @@ is_square(21489798124);
 ###### sal/algo/perm.h --- <a name="perm">permutation and combination</a>
 ```C++
 std::string words {"Hello"};
+
 // modifies the sequence without return
 // algorithms work on indexable sequences
 // k is from 0 to s.size()! - 1
@@ -217,6 +222,7 @@ int combos = count_combos(coins, 200);
 // keep a sieve object if continuous work with primes is needed
 using big_int = size_t;
 Sieve<big_int> sieve;
+
 
 while (true) sieve.next_prime();
 // generate infinite stream of primes (each of big_int)
@@ -269,6 +275,7 @@ std::string a {"It was the best of times..."};
 std::string b {"That's the best orange juice!"};
 lc_substr(a, b);
 // string "s the best o"
+
 
 lc_subseq(a, b);
 // string "as the best o ie"
@@ -349,6 +356,7 @@ sum_factors(num);
 // precision timing, starts counting when constructed
 Timer timing;
 
+
 // generate random vector of integers for testing
 int max_value = 50000;
 int element_number = 4000;
@@ -375,7 +383,36 @@ timing.tonow();
 // double in microseconds 
 ```
 ###### sal/data/list.h --- <a name="list">basic linked list</a>
+```C++
+Basic_list<int> l {5, 7, 11, 13, 17, 19};
+std::cout << l;
+// 5 7 11 13 17 19
 
+// insert at head
+l.insert(3);
+l.print();
+// 3 5 7 11 13 17 19
+
+// append to tail
+l.append(23);
+// 3 5 7 11 13 17 19 23
+
+l.kth_last(2);
+// pointer to node 19 
+std::cout << l.kth_last(2)->data << std::endl;
+// 19
+
+// insert after the 2nd last 
+l.insert_after(19, l.kth_last(2));
+// 3 5 7 11 13 17 19 19 23
+
+l.erase(13);
+// 3 5 7 11 17 19 19 23
+
+// remove duplicates
+l.remove_dup();
+// 3 5 7 11 17 19 23
+```
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
