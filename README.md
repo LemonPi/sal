@@ -330,10 +330,18 @@ levenshtein("Saturday", "Sunday");
 
 ###### sal/algo/factorize.h --- <a name="factorize">factorization of integers</a>
 ```C++
-std::vector<int> factors {factorize(421412)};
-// 2 2 137 769 
+size_t num = 421412;
+
+// prime factorize
+factorize(421412);
+// vector<size_t> 2 2 137 769 (in order)
 
 
+num_factors(num);
+// size_t 12 (1 2 4 137 274 548 769 1538 3076 105353 210706 421412)
+
+sum_factors(num);
+// size_t 743820 (1 + 2 + 4 + 137 + ... + 421412)
 ```
 
 ###### sal/algo/utility.h --- <a name="utility">utility and testing functions</a>
