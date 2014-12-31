@@ -269,9 +269,20 @@ rdx_sort(v.begin(), v.end(), 20);	// 20 bits needed for 2^20 max
 
 tim_sort(v.begin(), v.end()); break;
 ```
+
 ###### sal/algo/string.h --- <a name="string">edit distances</a>
+```C++
+levenshtein("Saturday", "Sunday");
+// 3 edit actions (insertion, deletion, or substitution)
+```
 
 ###### sal/algo/factorize.h --- <a name="factorize">factorization of integers</a>
+```C++
+std::vector<int> factors {factorize(421412)};
+// 2 2 137 769 
+
+
+```
 
 ###### sal/algo/utility.h --- <a name="utility">utility and testing functions</a>
 
