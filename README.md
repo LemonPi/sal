@@ -239,10 +239,36 @@ std::vector<int> v {632, 32, 31, 88, 11, 942, 5, 23};
 select(v.begin(), v.end(), 4);
 select(v, 4);	// same as above
 // partitions v so that the 4th element (32) is in the right place and return iterator to it
-
 ```
 ###### sal/algo/sort.h --- <a name="sort">comparison, distributive, and hybrid sorts</a>
+```C++
+std::vector<int> v {randgen(1048576, 100000)};	// 2^20
 
+bub_sort(v.begin(), v.end());
+
+// need to know maximum for counting sort, else wastes one pass finding maximum
+cnt_sort(v.begin(), v.end(), 1048577);
+
+// binary insertion sort
+ins_sort(v.begin(), v.end());
+
+heap_sort(v.begin(), v.end());
+
+// linear insertion sort
+lin_sort(v.begin(), v.end());
+
+mer_sort(v.begin(), v.end());
+
+// patience sort, really slow in practice
+pat_sort(v.begin(), v.end());
+
+qck_sort(v.begin(), v.end());
+
+// need to know maximum for counting sort, else uses the maximum bit of size
+rdx_sort(v.begin(), v.end(), 20);	// 20 bits needed for 2^20 max
+
+tim_sort(v.begin(), v.end()); break;
+```
 ###### sal/algo/string.h --- <a name="string">edit distances</a>
 
 ###### sal/algo/factorize.h --- <a name="factorize">factorization of integers</a>
