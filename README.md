@@ -414,6 +414,74 @@ l.remove_dup();
 // 3 5 7 11 17 19 23
 ```
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
+```C++
+Matrix<int> A {{2, 5, 6},
+	       {3, 4, -3},
+	       {7, 8, 0}};
+Matrix<int> B {{-1, 1},
+	       {5, -2},
+	       {4, 2}};
+
+// size query
+A.row();
+// size_t 3
+B.col();
+// size_t 2
+
+
+// get element (indices from 0)
+A.get(1, 2);
+// int -3 (2nd row, 3rd col)
+
+
+// for least work in multiplying matrices, use mul(sequence) from numeric.h
+Matrix<int> C = A * B;
+// Matrix<int>
+// 2 5  6   -1  1       47  4
+// 3 4 -3    5 -2  -->  5  -11 
+// 7 8  0    4  2       33 -9
+
+
+// clockwise rotation
+C.rotate();
+// 33   5   47
+// -9  -11  4
+
+
+
+Matrix<int> F {{1, 1},
+			   {1, 0}};
+// matrix exponentiation
+F.pow(5);
+// Matrix<int>
+// 8  5
+// 5  3
+
+// matrix addition
+F += Matrix<int> {{2, 5}, {5, 7}};
+// 10 10
+// 10 10
+F + Matrix<int>{{1,1},{1,1},{1,1}};
+// runtime error exception from adding different dimensions
+
+
+// size modification
+Matrix<int> id3 {identity<int>(3)};
+// 1 0 0
+// 0 1 0
+// 0 0 1
+
+// default for new elements is 0
+id3.resize(4,5,2);
+// 1 0 0 2 2
+// 0 1 0 2 2
+// 0 0 1 2 2
+// 2 2 2 2 2
+id3.resize(2,2);
+// 1 0
+// 0 1
+
+```
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
 
