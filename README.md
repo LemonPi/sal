@@ -345,7 +345,35 @@ sum_factors(num);
 ```
 
 ###### sal/algo/utility.h --- <a name="utility">utility and testing functions</a>
+```C++
+// precision timing, starts counting when constructed
+Timer timing;
 
+// generate random vector of integers for testing
+int max_value = 50000;
+int element_number = 4000;
+randgen(max_value, element_number);
+// vector<int> (4000 elements with values between 0 and 50000)
+
+
+// restart timer
+timing.restart();
+
+
+std::vector<int> v;
+v.reserve(element_number);
+for (int i = 0; i < element_number; ++i) v.push_back(i);
+// vector 1 2 3 4 5 ... 50000
+
+// randomly displace elements of v probabilistically 5 elements away from sorted position
+perturb(v.begin(), v.end(), 5);
+
+// print a sequence so elements are separated by space
+print(v);
+
+timing.tonow();
+// double in microseconds 
+```
 ###### sal/data/list.h --- <a name="list">basic linked list</a>
 
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
