@@ -205,7 +205,42 @@ int combos = count_combos(coins, 200);
 ###### sal/algo/prime.h --- <a name="prime">prime generation and manipulation</a>
 
 ###### sal/algo/search.h --- <a name="search">basic searching, substring matching, and finding longest common features</a>
+```C++
+std::vector<int> seq {1,3,12,14,15,18,20};
+// bin_search assumes sequence is in order and elements are comparable
+bin_search(seq.begin(), seq.end(), 12);
+// gives iterator to element 12
+bin_search(seq, 12);
+// same as above
+bin_search(seq.begin(), seq.end(), 17);
+// gives seq.end()
 
+
+intersection({{1,3,5,6,7,8},{2,4,6,9,10},{3,4,5,6,10)}});
+// {6} only element shared by all sets
+
+
+std::string a {"It was the best of times..."};
+std::string b {"That's the best orange juice!"};
+lc_substring(a, b);
+// "the best o"
+
+lc_subseq(a, b);
+// "ts the best o ie"
+lc_subseq_len(a, b);
+// 16
+
+
+sub_match(a, "the best");
+// const iterator to 't' in a
+
+
+std::vector<int> v {632, 32, 31, 88, 11, 942, 5, 23};
+select(v.begin(), v.end(), 4);
+select(v, 4);	// same as above
+// partitions v so that the 4th element (32) is in the right place and return iterator to it
+
+```
 ###### sal/algo/sort.h --- <a name="sort">comparison, distributive, and hybrid sorts</a>
 
 ###### sal/algo/string.h --- <a name="string">edit distances</a>
