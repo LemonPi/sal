@@ -755,7 +755,68 @@ for (auto u = v.begin(); u != v.end(); ++u)
 
 ```
 ###### sal/data/graph/search.h --- <a name="graph_search">graph searches</a>
+```C++
+/* algorithms expects Graph to have: 
+	vertex iterators in begin() and end() (and reverse iterators in rbegin(), rend())
+  		* gives vertex name of type V
+  		begin() and end() to give adjacent iterators
 
+  	adjacent iterator pair in adjacent(V)
+  		* gives vertex name of type V, the destination vertex
+  		dest() gives name of destination vertex (same as * operator)
+  		weight() gives weight of edge to destination vertex
+*/
+
+// breadth first search ----------------
+// usually used to find distances to a source node
+// works with directed and undirected but have to be unweighted
+graph<char> g {{'v','r'},{'r','s'},{'s','w'},{'w','t'},{'t','x'},{'w','x'},{'t','u'},
+			   {'x','u'},{'x','y'},{'u','y'}};
+
+// breadth first search starting from a vertex
+auto property = bfs(g, 's');
+// property map with distance and parent information
+// tracing back parents of each vertex creates a breadth-first tree
+
+
+for (char vertex = 'u'; ;vertex = property[vertex].parent) {
+	std::cout << vertex;
+	if (vertex == 's') break;
+	std::cout << " <- ";
+}
+// u <- x <- w <- s
+
+
+property['u'].distance;
+// size_t 3 (number of edges to get to u from s)
+
+
+
+
+// depth first search ------------------
+// usually used as part of other algorithms
+
+// can also function to find shortest number of edges from a source node
+auto property = dfs(g, 's', 0);	// need dummy int variable for overload resolution
+// property map with parent and time stamp information
+
+
+for (char vertex = 'u'; ;vertex = property[vertex].parent) {
+	std::cout << vertex;
+	if (vertex == 's') break;
+	std::cout << " <- ";
+}
+// u <- t <- w <- s different from bfs, but same length
+
+
+
+
+digraph<char> e {{'u','v'},{'u','x'},{'x','v'},{'v','y'},{'y','x'},
+				{'w','y'},{'w','z'},{'z','z'}};
+// create depth-first forest
+auto dfs_property = dfs(e);
+// not particularly useful by itself, but very useful for other algorithms
+```
 ###### sal/data/utility.h --- <a name="graph_utility">important graph algorithms</a>
 
 
