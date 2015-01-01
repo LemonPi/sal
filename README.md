@@ -193,17 +193,18 @@ is_square(21489798124);
 std::string words {"Hello"};
 
 // modifies the sequence without return
-// algorithms work on indexable sequences
+// algorithms work on any indexable sequence, string is the example's sequence type
 // k is from 0 to s.size()! - 1
+
 perm(words, 1);
-// string "oHell"
+// sequence "oHell"
 
 
 llperms(words);
-// vector<string> (120 permutations of "Hello")
+// vector<sequence> (120 permutations of "Hello")
 
 allperms_distinct(words);
-// set<string> (60 distinct permutations of "Hello")
+// set<sequence> (60 distinct permutations of "Hello")
 
 
 
@@ -517,15 +518,19 @@ C.rotate();
 ```C++
 // Basic tree usage -------------------------
 Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+
 // insert element
 t.insert(5);
 // erase element
+
 t.erase(1);
 // find element
+
 auto node = t.find(5);
-// const iterator to node holding 5
+// iterator to node holding 5
+
 t.find(11);
-// const iterator to end == t.end()
+// iterator to end == t.end()
 
 
 
@@ -636,6 +641,7 @@ tree_predecessor(node.get());
 tree_successor(node.get());
 // node pointer to next largest node
 
+
 // traversals take NP root and an operation that acts on NP
 inorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
 preorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
@@ -676,13 +682,16 @@ t.find({22, 25});
 t.find(22, 25);		// overloaded to accept Intervals as well as low, high pairs
 // iterator to some overlapping interval, else end()
 
+
 // find first (earliest) overlapping interval
 t.find_first(20, 22);
 // iterator to [15, 23] (note that [16, 21] is also overlapping, but starts later)
 
+
 // find all intervals that match
 for (auto interval : t.find_all(20,22)) PRINTLINE(*interval); 
 // vector<node pointers> [15, 23], [16, 21]
+
 
 // find exact interval match
 t.find_exact(16, 21);
@@ -764,6 +773,7 @@ for (auto v = edges.first; v != edges.second; ++v)
 // get vertex iterator
 auto v = g.vertex(5);
 // iterator to vertex named 5
+
 // iterate over adjacent vertices u
 for (auto u = v.begin(); u != v.end(); ++u)
 	std::cout << u;
@@ -927,7 +937,7 @@ digraph<std::string> trade {{"China","USA"},{"USA","EU"},{"USA","Canada"},{"USA"
 				{"France","Russia"},{"France","Australia"},{"Australia","Australia"}};
 
 auto mutual_partners = strongly_connected(trade);
-// vector of sets of strings
+// vector of sets of vertex names (strings in this case)
 
 
 for (const auto& bloc: mutual_partners) {
