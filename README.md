@@ -1,7 +1,8 @@
 SAL - simple algorithms and datastructures library
 ===
 
-A header only library containing efficient algorithms and data structures implemented simply.  
+A C++ header only library containing efficient algorithms and data structures implemented simply.  
+
 Simplicity here refers to how close the implementation matches the core concepts of each algorithm,
 rather than the triviality of each algorithm.
 
@@ -124,7 +125,7 @@ Data structures
 - recursive depth first search
 - visitors for custom actions at certain points of DFS
 
-###### [sal/data/utility.h --- important graph algorithms](#graph_utility)
+###### [sal/data/graph/utility.h --- important graph algorithms](#graph_utility)
 - topological sort
 - check for cycle
 - transpose of graph
@@ -816,7 +817,108 @@ digraph<char> e {{'u','v'},{'u','x'},{'x','v'},{'v','y'},{'y','x'},
 // create depth-first forest
 auto dfs_property = dfs(e);
 // not particularly useful by itself, but very useful for other algorithms
-```
-###### sal/data/utility.h --- <a name="graph_utility">important graph algorithms</a>
 
+
+
+// DFS visitor -----------------------
+// actions taken at several key points of searching can be customized
+struct Graph_visitor {
+
+	// generate vector of vertices to visit
+	// acts as a stack, visitation happens from back to front
+	// by default visits every vertex
+	template <typename Property_map, typename Graph>
+	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
+		std::vector<typename Graph::vertex_type> exploring;
+		for (auto v = g.rbegin(); v != g.rend(); ++v) {
+			// mark unexplored
+			property[*v] = {unsigned_infinity, 0, *v};
+			// expore every vertex
+			exploring.push_back(*v);
+		}
+		return std::move(exploring);
+	}
+
+	// root vertex of a new depth-first tree, when a new unconnected component is discovered
+	template <typename Graph>
+	void start_vertex(typename Graph::vertex_type, const Graph&) {}
+
+	// when each vertex is first discovered
+	template <typename Graph>
+	void discover_vertex(typename Graph::vertex_type, const Graph&) {}
+
+	// when a vertex's neighbours are all being explored
+	template <typename Graph>
+	void finish_vertex(typename Graph::vertex_type, const Graph&) {}
+
+	// when an edge leads to an ancestor vertex of the current exploration path
+	template <typename Graph>
+	void back_edge(typename Graph::vertex_type, const Graph&) {}
+
+	// when an edge leads to a vertex without a shared ancestor 
+	template <typename Graph>
+	void forward_or_cross_edge(typename Graph::vertex_type, const Graph&) {}
+};
+
+```
+###### sal/data/graph/utility.h --- <a name="graph_utility">important graph algorithms</a>
+```C++
+// topological sort -----------------------
+// for directed acyclic graph (dag)
+// orders all vertices so that parent vertices are always before children
+// if vertices are events, then sorting gives one possible sequence of events
+// directed edge (u,v) means u has to happen before v
+digraph<std::string> dress {{"undershorts", "pants"}, {"undershorts", "shoes"}, {"pants", "belt"},
+			{"pants", "shoes"}, {"socks", "shoes"}, {"shirt", "belt"}, {"shirt", "tie"}, {"tie", "jacket"},
+			{"belt", "jacket"}};
+dress.add_vertex("watch");
+
+
+std::list<string> dress_order;
+// give a possible ordering of events
+topological_sort(dress, std::front_inserter(dress_order));
+
+for (const std::string& item : dress_order) std::cout << item << ' ';
+// watch undershorts socks shirt tie pants shoes belt jacket
+// perfectly logical sequence of dressing
+
+
+
+
+// cycle testing -----------------------
+// some algorithms need directed acyclic graphs (dag)
+has_cycle(dress);
+// bool true (if false, then the ordering given would be false)
+
+
+
+
+// transpose -----------------------
+// create graph with all the edges reversed
+transpose(dress);
+// graph (of taking off clothes)
+
+// topological sort gives
+// watch shoes socks jacket tie belt shirt pants undershorts
+
+
+
+
+// strongly connected components --------------------
+// a SCC is a part of a graph where any vertex can get to any other vertex inside it
+// could model trading networks and the like
+digraph<std::string> trade {{"China","USA"},{"USA","EU"},{"USA","Canada"},{"USA","Russia"},{"EU","Brazil"},{"EU","France"},
+				{"Brazil","EU"},{"Brazil","Australia"},{"Canada","China"},{"Canada","Russia"},{"Russia","France"},
+				{"France","Russia"},{"France","Australia"},{"Australia","Australia"}};
+
+auto mutual_partners = strongly_connected(trade);
+// vector of sets of strings
+
+
+for (const auto& bloc: mutual_partners) {
+	for (const std::string& country : bloc) std::cout << country << ' ';
+	cout << '\t';
+}
+// USA China Canada      EU Brazil      Russia France   	Australia
+```
 
