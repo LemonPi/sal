@@ -38,6 +38,7 @@ Algorithms
 - fibonacci generation
 - cyclic number generation and detection
 - greatest common denominator
+- totient (number coprimes below)
 - checking for perfect square and powers of
 
 ###### [sal/algo/perm.h --- permutation and combination](#perm)
@@ -54,7 +55,6 @@ Algorithms
 - prime after a number
 - count primes below a number
 - check if prime
-- totient 
 
 ###### [sal/algo/search.h --- basic searching, substring matching, and finding longest common features](#search)
 - binary search on sorted sequence
@@ -135,7 +135,7 @@ Example usage
 ===
 ```namespace sal``` will be used implicitely here  
 functions that take iterator pairs are overloaded to take containers as well  
-###### sal/algo/numerics.h --- <a name="numeric">numeric</a>
+###### sal/algo/numeric.h --- <a name="numeric">numeric</a>
 ```C++
 // 7^91 % 10
 int a = modular_pow(7, 91, 10); 
@@ -177,6 +177,11 @@ for (int i = 0; i != 100; ++i) {
 }
 mul(mats);
 // Matrix<int> 
+
+
+totient(500);
+phi(500);
+// big_int 200 (200 numbers below 500 that are coprime with it)
 
 
 // check for perfect square
@@ -252,9 +257,6 @@ sieve.primes_upto(1000000);
 // vector<big_int> (78498 primes that are under one million)
 
 
-totient(500);
-phi(500);
-// big_int 200 (200 numbers below 500 that are coprime with it)
 ```
 ###### sal/algo/search.h --- <a name="search">basic searching, substring matching, and finding longest common features</a>
 ```C++
@@ -341,7 +343,7 @@ levenshtein("Saturday", "Sunday");
 ```C++
 size_t num = 421412;
 
-// prime factorize
+// prime factorize regular numbers (usually smooth) ----------
 factorize(421412);
 // vector<size_t> 2 2 137 769 (in order)
 
@@ -351,6 +353,19 @@ num_factors(num);
 
 sum_factors(num);
 // size_t 743820 (1 + 2 + 4 + 137 + ... + 421412)
+
+
+
+// factorize primes or semiprimes -----------------------------
+big_int semiprime = 32452843 * 32452867;	// 1053187797650881
+
+// would still not be too slow
+factorize(semiprime);
+
+// would be faster
+factorize_rough(semiprime);
+// would be much faster for repeated uses (primes are kept static)
+
 ```
 
 ###### sal/algo/utility.h --- <a name="utility">utility and testing functions</a>
