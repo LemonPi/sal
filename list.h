@@ -15,7 +15,7 @@ protected:
 
 public:
 	List(T d) : head{new Node(d)} {}
-	List(initializer_list<T> l) : head{new Node{*l.begin()}} {
+	List(std::initializer_list<T> l) : head{new Node{*l.begin()}} {
 		NP node {head};
 		for (auto i = l.begin()+1; i != l.end(); ++i) {
 			node->next = new Node{*i};
@@ -23,8 +23,10 @@ public:
 		}
 	}
 
-	NR kth_last(size_t k) {
-		if (head == nullptr) return T{};
+	NP kth_last(size_t k) {
+		// index from 1, so last is k = 1
+		--k;
+		if (head == nullptr) return nullptr;
 		// get 2 pointers separated by k
 		NP n {head};
 		NP jump {head};
@@ -74,9 +76,18 @@ public:
 			n = n->next;
 		n->next = node;
 	}
-	NR erase(T d);
+	void erase(T d) {
+		NP node {head};
+		if (!node) return;
+		if (node->data == d) {head = node->next; delete node; return;}
+		while (node->next && node->next->data != d) node = node->next;
+		if (!node->next) return;
+		NP temp {node->next};
+		node->next = node->next->next;
+		delete temp;
+	}
 	void remove_dup() {
-		unordered_set<T> elems(head->data);
+		std::unordered_set<T> elems(head->data);
 		// cannot have duplicate in first element
 		for (Node* node = head; node != nullptr && node->next != nullptr; node = node->next) {
 			if (elems.find(node->next->data) != elems.end()) {
@@ -89,14 +100,14 @@ public:
 	}
 
 	template <typename TT>
-	friend istream& operator>>(istream&, List<TT>&);
+	friend std::istream& operator>>(std::istream&, List<TT>&);
 	template <typename TT>
-	friend ostream& operator<<(ostream&, const List<TT>&);
+	friend std::ostream& operator<<(std::ostream&, const List<TT>&);
 	void print() const {std::cout << *this;}
 };
 
 template <typename Node>
-istream& operator>>(istream& is, List<Node>& l) {
+std::istream& operator>>(std::istream& is, List<Node>& l) {
 	typename Node::key_type tmp;
 	is >> tmp;	// first elem
 	Node* start {new Node{tmp}};
@@ -110,10 +121,10 @@ istream& operator>>(istream& is, List<Node>& l) {
 }
 
 template <typename Node>
-ostream& operator<<(ostream& os, const List<Node>& l) {
+std::ostream& operator<<(std::ostream& os, const List<Node>& l) {
 	for (Node* node = l.head; node != nullptr; node = node->next)
 		os << node->data << ' ';
-	os << endl;
+	os << std::endl;
 	return os;
 }
 

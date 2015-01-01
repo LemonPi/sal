@@ -84,41 +84,6 @@ void postorder_walk(Node* start, Op op) {
 }
 
 // iterators
-// full traversal takes O(n) time and O(1) space
-// traverse at most 2(n - 1) edges, where n is # nodes
-// non-const bidirectional iterator
-template <typename Node>
-struct Tree_iterator {
-	using NP = Node*;
-	using key_type = typename Node::key_type;
-	using CR = const Tree_iterator<Node>&;
-
-	NP cur;
-
-	void operator++() {cur = tree_successor(cur);}
-	void operator--() {cur = tree_predecessor(cur);}
-	Node& operator*() {return *cur;}
-	NP operator->() {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
-};
-// const bidirectional iterator
-template <typename Node>
-struct Tree_const_iterator {
-	using NP = Node*;
-	using key_type = typename Node::key_type;
-	using CR = const Tree_iterator<Node>&;
-
-	const NP cur;
-
-	void operator++() {cur = tree_successor(cur);}
-	void operator--() {cur = tree_predecessor(cur);}
-	Node operator*() {return *cur;}
-	const NP operator->() {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
-};
-
 // adjacent iterator (expected of all graphs)
 // iterators from left to right if they exist
 template <typename Node>
@@ -131,10 +96,12 @@ struct Tree_adj_iterator {
 
 	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
 	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
-	Node& operator*() {return *cur;}
+	key_type& operator*() {return cur->key;}
 	NP operator->() {return cur;}
+	NP get() 		{return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}	
+	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << *itr.cur; return os;}
 };
 // const version
 template <typename Node>
@@ -147,10 +114,62 @@ struct Tree_adj_const_iterator {
 
 	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
 	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
-	Node operator*() {return *cur;}
+	key_type operator*() {return cur->key;}
 	const NP operator->() {return cur;}
+	const NP get() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}	
+};
+
+// node iterators
+// full traversal takes O(n) time and O(1) space
+// traverse at most 2(n - 1) edges, where n is # nodes
+// non-const bidirectional iterator
+template <typename Node>
+struct Tree_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_iterator<Node>&;
+	using adjacent_iterator = Tree_adj_iterator<Node>;
+
+	NP cur;
+
+	void operator++() {cur = tree_successor(cur);}
+	void operator--() {cur = tree_predecessor(cur);}
+	key_type& operator*() {return cur->key;}
+	NP operator->() {return cur;}
+	NP get()		{return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+	adjacent_iterator begin() {
+		if (cur->left != Node::nil) return {cur->left};
+		else return {cur->right};
+	}
+	adjacent_iterator end()   {return {Node::nil};}
+	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << *itr.cur; return os;}
+};
+// const bidirectional iterator
+template <typename Node>
+struct Tree_const_iterator {
+	using NP = Node*;
+	using key_type = typename Node::key_type;
+	using CR = const Tree_iterator<Node>&;
+	using adjacent_const_iterator = Tree_adj_const_iterator<Node>;
+
+	const NP cur;
+
+	void operator++() {cur = tree_successor(cur);}
+	void operator--() {cur = tree_predecessor(cur);}
+	key_type operator*() {return cur->key;}
+	const NP operator->() {return cur;}
+	const NP get() 		  {return cur;}
+	bool operator==(CR other) {return other.cur == cur;}
+	bool operator!=(CR other) {return !(*this == other);}
+	adjacent_const_iterator begin() const {
+		if (cur->left != Node::nil) return {cur->left};
+		else return {cur->right};
+	}
+	adjacent_const_iterator end()   const {return {Node::nil};}
 };
 
 template <typename Node>
@@ -389,6 +408,35 @@ protected:
 		// updating moved's children is up to the caller
 	}
 
+	// test if valid rb tree, returns black height rooted at root
+	int blackheight(NP root) const {
+		if (root == Node::nil) return 1;
+		NP left {root->left};
+		NP right {root->right};
+		if (root->color == Color::RED) {
+			if (left->color == Color::RED || right->color == Color::RED) {
+				std::cout << "Consequtive red nodes\n";
+				return 0;
+			}
+		}
+	
+		if ((left != Node::nil && left->key > root->key) &&
+		   (right != Node::nil && right->key < root->key)) {
+			std::cout << "Basic binary tree violation\n";
+			return 0;
+		}
+
+		int left_bh {blackheight(left)};
+		int right_bh {blackheight(right)};
+		if (left_bh != 0 && right_bh != 0 && left_bh != right_bh) {
+			// check for 0 first to pardon carry-on error
+			std::cout << "Different black height\n";
+			return 0;
+		}
+
+		if (left_bh != 0 && right_bh != 0) return root->color == Color::RED? left_bh : left_bh + 1;
+		else return 0; 
+	}
 
 public:
 	using iterator = Tree_iterator<Node>;
@@ -412,7 +460,7 @@ public:
 	void erase(T data) {
 		NP node {tree_find(root, data)};
 		if (node != Node::nil) rb_delete(node);
-	}
+	}			
 
 	iterator find(T key) 			 {return iterator{tree_find(root, key)};}
 	const_iterator find(T key) const {return const_iterator{tree_find(root, key)};}
@@ -451,6 +499,12 @@ public:
 		inorder_walk(root, [](NP node){std::cout << node->key << ' ';});
 		std::cout << "root: " << root->key << std::endl; 
 	}
+
+	// 0 for invalid, else blackheight
+	int valid() const {
+		return blackheight(root);
+	}
+
 };
 
 

@@ -1,5 +1,7 @@
 #pragma once
 #include <deque>
+#include <vector>
+#include <unordered_set>
 #include "search.h"
 
 namespace sal {
@@ -44,6 +46,7 @@ Graph transpose(const Graph& g) {
 		for (auto v = u.begin(); v != u.end(); ++v) {
 			g_t.add_edge(*v, *u);
 		}
+		g_t.add_vertex(*u);
 	}
 	return std::move(g_t);
 } 

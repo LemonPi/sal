@@ -62,24 +62,17 @@ void test_tree() {
 	t.insert(5);
 	// testing iterators with standard library functions
 	for_each(t.begin(), t.end(), 
-		[](const Node& node){cout << node.key << ' ';});
+		[](const Node& node){std::cout << node.key << ' ';});
 }
 
 void test_order_tree() {
 	sal::Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 
-	auto node = t.find(4);
-	if (node == t.end()) cout << "FAILED...Order tree find\n";
-
-	t.erase(4);
-	node = t.find(4);
-	if (node != t.end()) cout << "FAILED...Order tree erase\n";
-
-	t.insert(5);
-
 	int rank {4};
-	node = t.select(rank);
+	auto node = t.select(rank);
 	if (node == t.end() || node->key != 3) cout << "FAILED...Order tree select\n";
+
+	if (t.rank(node.get()) != rank) cout << "FAILED...Order tree rank\n";
 }
 
 void test_treap() {
@@ -106,10 +99,15 @@ void test_interval_set() {
 
 	interval = t.find(11, 14);
 	if (interval != t.end()) cout << "FAILED...Interval set find\n";
+
+
 }
 
 void test_undirected_graph() {
 	sal::graph<int> g {{5,1},{5,4},{5,10},{1,4},{4,10}};
+
+	if (g.num_vertex() != 4) cout << "FAILED...Undirected graph vertex number\n";
+	if (g.num_edge() != 5) cout << "FAILED...Undirected graph edge number\n";
 
 	if (g.weight(5, 1) != 1 || g.weight(5, 2) != 0 || g.weight(4, 1) != 1) 
 		cout << "FAILED...Undirected unweighted graph edge\n";
@@ -139,6 +137,8 @@ void test_undirected_graph() {
 
 void test_directed_graph() {
 	sal::digraph<int> g {{5,1},{5,4},{5,10},{1,4},{4,10}};
+
+	if (g.num_edge() != 5) cout << "FAILED...Directed graph edge number\n";
 
 	if (g.weight(5, 1) != 1 || g.weight(5, 2) != 0 || g.weight(4, 1) != 0) 
 		cout << "FAILED...Directed unweighted graph edge\n";
@@ -193,7 +193,7 @@ void test_bfs() {
 
 void test_dfs() {
 	sal::digraph<char> e {{'u','v'},{'u','x'},{'x','v'},{'v','y'},{'y','x'},
-						{'w','y'},{'w','z'},{'z','z'}};
+						  {'w','y'},{'w','z'},{'z','z'}};
 	auto dfs_property = sal::dfs(e);
 	map<char, pair<size_t, size_t>> correct_timestamps;
 	correct_timestamps['u'] = {1, 8};
@@ -213,17 +213,17 @@ void test_dfs() {
 
 void test_topological_sort() {
 	// directed edge (u,v) means u must happen before v
-	sal::digraph<string> g {{"undershorts", "pants"}, {"undershorts", "shoes"}, {"pants", "belt"},
+	sal::digraph<string> dress {{"undershorts", "pants"}, {"undershorts", "shoes"}, {"pants", "belt"},
 			{"pants", "shoes"}, {"socks", "shoes"}, {"shirt", "belt"}, {"shirt", "tie"}, {"tie", "jacket"},
 			{"belt", "jacket"}};
-	g.add_vertex("watch");
-	if (sal::has_cycle(g)) cout << "FAILED...Cycle testing (DFS)\n";
+	dress.add_vertex("watch");
+	if (sal::has_cycle(dress)) cout << "FAILED...Cycle testing (DFS)\n";
 
-	list<string> topo_order;
+	list<string> dress_order;
 	// give a possible ordering of events
-	sal::topological_sort(g, front_inserter(topo_order));
+	sal::topological_sort(dress, front_inserter(dress_order));
 
-	for (const string& v : topo_order) cout << v << ' ';
+	for (const string& item : dress_order) cout << item << ' ';
 	cout << endl;
 
 	sal::digraph<char> h {{'m','q'},{'m','r'},{'m','x'},{'n','q'},{'n','u'},{'n','o'},{'o','r'},{'o','v'},{'o','s'},
@@ -264,8 +264,8 @@ void test_matrix() {
 	cout << id3 << endl;
 	id3.resize(2,2);
 	cout << id3 << endl;
-	// test_mul();
-	// test_pow();
+	test_mul();
+	test_pow();
 }
 
 int main() {

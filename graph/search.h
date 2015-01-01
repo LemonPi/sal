@@ -2,6 +2,7 @@
 #include <queue>
 #include <stack>
 #include <unordered_map>
+#include <limits>
 #include "adjacency_list.h"
 #define IS_WHITE(x) (property[x].start == unsigned_infinity)
 #define IS_GREY(x) (property[x].finish == 0)
@@ -25,8 +26,6 @@ template <typename Graph, typename V>
 size_t dijkstra(const Graph& g, V s, V x) {
 	return 0;
 }
-
-
 
 template <typename V>
 struct Vertex_bfs_property {
@@ -68,12 +67,8 @@ template <typename Graph>
 VBP<Graph> bfs(const Graph& g, typename Graph::vertex_type s) {
 	using V = typename Graph::vertex_type;
 	VBP<Graph> property;
-	for (auto v = g.begin(); v != g.end(); ++v) {
-		// auto& v_p = property[*v];
-		// v_p.distance = std::numeric_limits<size_t>::max();
-		// v_p.status = Status::UNEXPLORED;
+	for (auto v = g.begin(); v != g.end(); ++v) 
 		property[*v] = {unsigned_infinity, *v};
-	}
 
 	property[s].distance = 0;
 	property[s].parent = s;
@@ -186,7 +181,7 @@ VDP<Graph> dfs(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 }
 // overload for specifying a source, can't use other visitors
 template <typename Graph>
-VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s) {
+VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s, int) {	// dummy argument for overloading
 	return dfs(g, Graph_single_visitor<Graph>{s});
 }
 

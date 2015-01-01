@@ -32,11 +32,13 @@ struct Adjacent_iterator {
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
-	V operator*() {return cur->first;}
+	V& operator*() {return cur->first;}
+	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	V& dest() {return cur->first;}
 	int& weight() {return cur->second;}
+	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << itr.cur->first << ' '; return os;}
 };
 template <typename Iter>
 struct Adjacent_const_iterator {
@@ -47,6 +49,7 @@ struct Adjacent_const_iterator {
 	void operator++() {++cur;}
 	void operator--() {--cur;}
 	V operator*() {return cur->first;}
+	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	V dest() {return cur->first;}
@@ -64,7 +67,8 @@ struct Vertex_iterator {
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
-	V operator*() {return cur->first;}
+	V& operator*() {return cur->first;}
+	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	std::pair<adjacent_iterator, adjacent_iterator> adjacent() {
@@ -72,6 +76,7 @@ struct Vertex_iterator {
 	}
 	adjacent_iterator begin() 	{return {cur->second.begin()};}
 	adjacent_iterator end() 	{return {cur->second.end()};}
+	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << itr.cur->first << ' '; return os;}
 };
 template <typename Iter>
 struct Vertex_const_iterator {
@@ -83,6 +88,7 @@ struct Vertex_const_iterator {
 	void operator++() {++cur;}
 	void operator--() {--cur;}
 	V operator*() {return cur->first;}
+	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent() const {
@@ -178,11 +184,17 @@ public:
 			return {{v_itr->second.begin()}, {v_itr->second.end()}};
 		else return {{},{}};
 	}
-	// vertex iteration
+
+	// retrieving vertex (find by default gives vertex)
 	iterator vertex(V v) 		 		{return {adj.find(v)};}
+	iterator find(V v) 		 			{return {adj.find(v)};}
+	const_iterator vertex(V v) const 	{return {adj.find(v)};}	
+	const_iterator find(V v) const 		{return {adj.find(v)};}
+
+
+	// vertex iteration
 	iterator begin() 					{return {adj.begin()};}
 	iterator end() 						{return {adj.end()};}
-	const_iterator vertex(V v) const 	{return {adj.find(v)};}
 	const_iterator begin() const 		{return {adj.begin()};}
 	const_iterator end() const   		{return {adj.end()};}
 	reverse_iterator rbegin() 			 	{return {adj.rbegin()};}
@@ -205,7 +217,7 @@ public:
 	}
 
 	// printing
-	friend ostream& operator<<(ostream& os, const Adjacency_list& g) {
+	friend std::ostream& operator<<(std::ostream& os, const Adjacency_list& g) {
 		for (const auto& vertex : g.adj) {
 			os << vertex.first << '(';
 			if (!vertex.second.empty()) {

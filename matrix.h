@@ -14,14 +14,16 @@ namespace sal {
 
 template <typename T>
 class Matrix {
-	size_t rows, cols;
 	vector<T> elems;
+	size_t rows, cols;
+
+	void rotate_copy();
 public:
-	Matrix(size_t r, size_t c) : rows{r}, cols{c}, elems(r*c, 0) {}	// default init to 0
-	Matrix(size_t r, size_t c, vector<T>&& e) : rows{r}, cols{c}, elems{move(e)} {}
+	Matrix(size_t r, size_t c) : elems(r*c, 0), rows{r}, cols{c}  {}	// default init to 0
+	Matrix(size_t r, size_t c, vector<T>&& e) : elems{std::move(e)}, rows{r}, cols{c}  {}
 	Matrix(const initializer_list<initializer_list<T>>& a);
-	Matrix(const Matrix& a) : rows{a.row()}, cols{a.col()}, elems{a.elems} {}
-	Matrix(Matrix&& a) : rows{a.row()}, cols{a.col()}, elems{move(a.elems)} {}
+	Matrix(const Matrix& a) : elems{a.elems}, rows{a.row()}, cols{a.col()}  {}
+	Matrix(Matrix&& a) : elems{std::move(a.elems)}, rows{a.row()}, cols{a.col()}  {}
 	Matrix<T>& operator=(const Matrix& a) {
 		rows = a.rows; cols = a.cols;
 		elems = a.elems;
@@ -64,7 +66,7 @@ public:
 
 	void clear_zero();
 
-	void print();
+	void print() const {std::cout << *this;}
 
 	Matrix<T>& operator*=(T);
 	Matrix<T>& operator*=(const Matrix&);
@@ -110,8 +112,8 @@ Matrix<T>::Matrix(const initializer_list<initializer_list<T>>& a) : rows{a.size(
 
 template <typename T>
 void Matrix<T>::rotate() {	// clockwise
-	if (rows != cols) return;	// no arbitrary rotation yet
-	int n = rows;	// assume rows == cols
+	if (rows != cols) {return rotate_copy();}	// else rotate in place for squares
+	int n = rows;	// rows == cols
 	for (int layer = 0; layer < n / 2; ++layer) {
 		int first = layer;
 		int last = n - 1 - layer;
@@ -130,6 +132,19 @@ void Matrix<T>::rotate() {	// clockwise
 			elems[i*cols + last] = top;
 		}
 	}
+}
+
+template <typename T>
+void Matrix<T>::rotate_copy() {	// clockwise
+	std::vector<T> new_elems;
+	new_elems.reserve(elems.size());
+	// go up from the bottom of each column to become new row
+	for (size_t c = 0; c < cols; ++c) 
+		for (size_t r = rows; r != 0; --r)
+			new_elems.push_back(elems[(r - 1)*cols + c]);
+		
+	std::swap(cols, rows);
+	elems = std::move(new_elems);
 }
 
 template <typename T>
@@ -246,9 +261,5 @@ ostream& operator<<(ostream& os, const Matrix<T>& m) {
 	return os;
 }
 
-template <typename T>
-void Matrix<T>::print() {
-	cout << *this;
-}
 
 }

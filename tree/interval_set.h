@@ -36,7 +36,7 @@ class Interval_augment : public Tree<Node> {
 		return !no_overlap(interval, low, high);
 	}
 	void update_max(NP interval) {
-		interval->max = max(interval->high, max(interval->left->max, interval->right->max));
+		interval->max = std::max(interval->high, std::max(interval->left->max, interval->right->max));
 	}
 	// either finds an overlapping interval or nil
 	NP interval_search(NP interval, T low, T high) const {
@@ -47,6 +47,7 @@ class Interval_augment : public Tree<Node> {
 		}
 		return interval;
 	}
+	// first (smallest key/low) interval that matches
 	NP interval_min_search(NP interval, T low, T high) const {
 		// check if left subtree overlaps
 		if (interval->left != Node::nil && interval->left->max >= low) {
@@ -60,6 +61,7 @@ class Interval_augment : public Tree<Node> {
 		else if (overlap(interval, low, high)) return interval;
 		else return interval_min_search(interval->right, low, high);
 	}
+	// all intervals that match
 	std::vector<NP> interval_all_search(NP interval, T low, T high) const {
 		std::vector<NP> res;
 		if (overlap(interval, low, high)) res.push_back(interval);
@@ -84,7 +86,7 @@ class Interval_augment : public Tree<Node> {
 	virtual void tree_insert(NP start, NP node) override {
 		NP parent {Node::nil};
 		while (start != Node::nil) {
-			start->max = max(start->max, node->max);	// update max
+			start->max = std::max(start->max, node->max);	// update max
 			parent = start;
 			if (node->key < start->key) start = start->left;
 			else start = start->right;
@@ -199,8 +201,6 @@ public:
 	iterator find(Interval<T> interval) 			{return iterator{interval_search(root, interval.low, interval.high)};}
 	iterator find_first(T low, T high) 				{return iterator{interval_min_search(root, low, high)};}
 	iterator find_first(Interval<T> interval) 		{return iterator{interval_min_search(root, interval.low, interval.high)};}
-	std::vector<NP> find_all(T low, T high) 		{return interval_all_search(root, low, high);}
-	std::vector<NP> find_all(Interval<T> interval) 	{return interval_all_search(root, interval.low, interval.high);}
 	iterator find_exact(T low, T high) 				{return iterator{interval_exact_search(root, low, high)};}
 	iterator find_exact(Interval<T> interval) 		{return iterator{interval_exact_search(root, interval.low, interval.high)};}
 	// const versions
@@ -210,6 +210,8 @@ public:
 	const_iterator find_first(Interval<T> interval) const	{return const_iterator{interval_min_search(root, interval.low, interval.high)};}
 	const_iterator find_exact(T low, T high) const			{return const_iterator{interval_exact_search(root, low, high)};}
 	const_iterator find_exact(Interval<T> interval) const	{return const_iterator{interval_exact_search(root, interval.low, interval.high)};}
+	std::vector<NP> find_all(T low, T high) const 			{return interval_all_search(root, low, high);}
+	std::vector<NP> find_all(Interval<T> interval) const 	{return interval_all_search(root, interval.low, interval.high);}
 
 	void print() const {
 		inorder_walk(root, [](NP node){std::cout << '[' << node->key << ',' << node->high << ']' << '(' << node->max << ')' << ' ';});
@@ -230,6 +232,11 @@ struct Internode {
 	// convert to interval
 	operator Interval<T>() {return {key, high};}
 };
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Internode<T>& interval) {
+	os << '[' << interval.key << ',' << interval.high << ']';
+	return os;
+}
 
 template <typename T>
 Internode<T>* Internode<T>::nil {new Internode{}};
