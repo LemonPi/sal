@@ -385,10 +385,22 @@ timing.tonow();
 ```
 ###### sal/data/list.h --- <a name="list">basic linked list</a>
 ```C++
+// Construction ---------------------------
 Basic_list<int> l {5, 7, 11, 13, 17, 19};
 std::cout << l;
 // 5 7 11 13 17 19
 
+
+
+// Queries ---------------------------
+l.kth_last(2);
+// pointer to node 19 
+std::cout << l.kth_last(2)->data << std::endl;
+// 19
+
+
+
+// Modification -------------------------
 // insert at head
 l.insert(3);
 l.print();
@@ -398,10 +410,6 @@ l.print();
 l.append(23);
 // 3 5 7 11 13 17 19 23
 
-l.kth_last(2);
-// pointer to node 19 
-std::cout << l.kth_last(2)->data << std::endl;
-// 19
 
 // insert after the 2nd last 
 l.insert_after(19, l.kth_last(2));
@@ -416,6 +424,7 @@ l.remove_dup();
 ```
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
 ```C++
+// Construction ---------------------------
 Matrix<int> A {{2, 5, 6},
 	       {3, 4, -3},
 	       {7, 8, 0}};
@@ -423,33 +432,22 @@ Matrix<int> B {{-1, 1},
 	       {5, -2},
 	       {4, 2}};
 
+
+// Queries ---------------------------
 // size query
 A.row();
 // size_t 3
 B.col();
 // size_t 2
 
-
 // get element (indices from 0)
 A.get(1, 2);
 // int -3 (2nd row, 3rd col)
 
 
-// for least work in multiplying matrices, use mul(sequence) from numeric.h
-Matrix<int> C = A * B;
-// Matrix<int>
-// 2 5  6   -1  1       47  4
-// 3 4 -3    5 -2  -->  5  -11 
-// 7 8  0    4  2       33 -9
 
 
-// clockwise rotation
-C.rotate();
-// 33   5   47
-// -9  -11  4
-
-
-
+// Arithmetic Operations ---------------------------
 Matrix<int> F {{1, 1},
 			   {1, 0}};
 // matrix exponentiation
@@ -466,6 +464,17 @@ F + Matrix<int>{{1,1},{1,1},{1,1}};
 // runtime error exception from adding different dimensions
 
 
+// for least work in multiplying matrices, use mul(sequence) from numeric.h
+Matrix<int> C = A * B;
+// Matrix<int>
+// 2 5  6   -1  1       47  4
+// 3 4 -3    5 -2  -->  5  -11 
+// 7 8  0    4  2       33 -9
+
+
+
+// Modification -------------------------
+// individual elements can be changed by get()
 // size modification
 Matrix<int> id3 {identity<int>(3)};
 // 1 0 0
@@ -482,11 +491,15 @@ id3.resize(2,2);
 // 1 0
 // 0 1
 
+// clockwise rotation
+C.rotate();
+// 33   5   47
+// -9  -11  4
 ```
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
 ```C++
-// Basic tree usage
+// Basic tree usage -------------------------
 Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 // insert element
 t.insert(5);
@@ -499,6 +512,9 @@ t.find(11);
 // const iterator to end == t.end()
 
 
+
+
+// Iterations --------------------------------
 // iteration over adjacent nodes (left to right)
 for (auto adjacent = node.begin(); adjacent != node.end(); ++adjacent)
 	std::cout << *adjacent << ' ';
@@ -512,7 +528,8 @@ std::for_each(t.begin(), t.end(),
 
 
 
-// Extending Tree for an augmented data structure
+
+// Extending Tree for an augmented data structure ---------
 // first step is creating a node
 /* requires
 	1. key element that can be compared using <
@@ -577,6 +594,9 @@ template <typename T>
 using Order_tree = Order_augment<Order_node<T>>;
 
 
+
+
+// Utilities ----------------------------
 // non-member functions that work on nodes only
 Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 using NP = Order_node<int>*;
@@ -607,7 +627,9 @@ postorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
 
 
 
+
 // Order statistics tree usage (with t above)
+// Queries ----------------------------
 // selecting ith smallest
 t.select(4);
 t[4];
@@ -621,9 +643,117 @@ t.rank(node.get());
 
 ```
 ###### sal/data/interval.h --- <a name="interval">interval tree</a>
+```C++
+// for finding overlapping intervals, useful for scheduling and collision detection
+// Construction ------------------------
+Interval_set<int> t {{16,21},{8,9},{5,8},{15,23},{25,30},{0, 3},{6, 10},{17,19}, 
+					{26,26}, {19,20}};
 
+
+
+
+// Queries ----------------------------
+// find any interval overlapping [22, 25]
+// overlap by default includes edge, so [25, 26] overlaps [22, 25]
+// easily adjustable by changing the strictness of ordering in the no_overlap method
+t.find({22, 25});
+t.find(22, 25);		// overloaded to accept Intervals as well as low, high pairs
+// iterator to some overlapping interval, else end()
+
+// find first (earliest) overlapping interval
+t.find_first(20, 22);
+// iterator to [15, 23] (note that [16, 21] is also overlapping, but starts later)
+
+// find all intervals that match
+for (auto interval : t.find_all(20,22)) PRINTLINE(*interval); 
+// vector<node pointers> [15, 23], [16, 21]
+
+// find exact interval match
+t.find_exact(16, 21);
+// iterator to [16, 21]
+```
 ###### sal/data/graph.h --- <a name="graph">directed and undirected graphs</a>
+```C++
+// Construction ------------------------
+// unweighted is equivalent to having uniform weight 1
+// undirected and unweighted graph by default
+graph<int> g {{5,1},{5,4},{5,10},{1,4},{4,10}};
 
+// directed and and unweighted graph
+digraph<int> g {{5,1},{5,4},{5,10},{1,4},{4,10}};
+
+
+// undirected and weighted graph
+graph<int> g {{5,1,10},{5,4,13},{5,10,17},{1,4,19},{4,10,23}};
+
+// directed and weighted graph
+digraph<int> g {{5,1,10},{5,4,13},{5,10,17},{1,4,19},{4,10,23}};
+
+
+
+
+// Queries ----------------------------
+// number of vertex
+g.num_vertex();
+// size_t 4
+
+// number of edges
+g.num_edge();
+// size_t 5
+
+// check if vertex exists
+g.is_vertex(5);
+// bool true
+
+// check if edge exists
+g.is_edge(5, 1);
+// bool true
+
+// weight of edge (1 for unweighted, 0 if not found)
+g.weight(5, 1);
+// int 10
+
+// out degree of a vertex
+g.degree(5);
+// size_t 3
+
+
+
+
+// Modification -------------------------
+// adding vertex (names have to be unique)
+g.add_vertex(7);
+
+// adding edge (have to be unique)
+// adding edge to non-existent vertices will create them
+// weight is 1 by default
+g.add_edge(6, 4);
+
+
+
+// Iterations ---------------------------
+// iterate over all vertices ordered by <
+for (auto v = g.begin(); v != g.end(); ++v)
+	std::cout << v;
+// 1 4 5 10
+// << overloaded for iterators
+
+// adjacency iteration
+auto edges = g.adjacent(5);
+// alter the weight
+for (auto v = edges.first; v != edges.second; ++v)
+	v.weight() = 1;
+
+// can also be done given a vertex iterator
+// get vertex iterator
+auto v = g.vertex(5);
+// iterator to vertex named 5
+// iterate over adjacent vertices u
+for (auto u = v.begin(); u != v.end(); ++u)
+	std::cout << u;
+// 1 4 10 (5 has out edges to all of them)
+
+```
 ###### sal/data/graph/search.h --- <a name="graph_search">graph searches</a>
 
 ###### sal/data/utility.h --- <a name="graph_utility">important graph algorithms</a>
