@@ -32,6 +32,8 @@ struct Adjacent_iterator {
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
+	Adjacent_iterator operator++(int) {return {cur++};}
+	Adjacent_iterator operator--(int) {return {cur--};}
 	V& operator*() {return cur->first;}
 	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
@@ -48,7 +50,9 @@ struct Adjacent_const_iterator {
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
-	V operator*() {return cur->first;}
+	Adjacent_const_iterator operator++(int) {return {cur++};}
+	Adjacent_const_iterator operator--(int) {return {cur--};}
+	V operator*() const {return cur->first;}
 	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
@@ -62,15 +66,19 @@ template <typename Iter>
 struct Vertex_iterator {
 	using CR = const Vertex_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
+	using weight_type = typename Iter::value_type::second_type::value_type;
 	using adjacent_iterator = Adjacent_iterator<typename Iter::value_type::second_type::iterator>;
 	Iter cur;
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
+	Vertex_iterator operator++(int) {return {cur++};}
+	Vertex_iterator operator--(int) {return {cur--};}
 	V& operator*() {return cur->first;}
 	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
+	int edge(V adj) {return *cur->second.find(adj);}
 	std::pair<adjacent_iterator, adjacent_iterator> adjacent() {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}
@@ -82,15 +90,19 @@ template <typename Iter>
 struct Vertex_const_iterator {
 	using CR = const Vertex_const_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
+	using weight_type = typename Iter::value_type::second_type::value_type;
 	using adjacent_const_iterator = Adjacent_const_iterator<typename Iter::value_type::second_type::const_iterator>;
 	Iter cur;
 
 	void operator++() {++cur;}
 	void operator--() {--cur;}
-	V operator*() {return cur->first;}
+	Vertex_const_iterator operator++(int) {return {cur++};}
+	Vertex_const_iterator operator--(int) {return {cur--};}
+	V operator*() const {return cur->first;}
 	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
+	int edge(V adj) {return *cur->second.find(adj);}
 	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent() const {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}

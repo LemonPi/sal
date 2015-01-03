@@ -1,15 +1,18 @@
 #pragma once
 #include <deque>
 #include <vector>
+#include <map>
+#include <set>
 #include <unordered_set>
 #include "search.h"
+#include "../heap.h"	// used for piority queue
 
 namespace sal {
 // for directed acyclic graph (dag)
 // orders all vertices so that parent vertices are always before children
 // if vertices are events, then sorting gives one possible sequence of events
 template <typename Output_iter>
-struct Topological_visitor : public Graph_visitor {
+struct Topological_visitor : public DFS_visitor {
 	Output_iter out;
 	Topological_visitor(Output_iter o) : out{o} {}
 
@@ -24,7 +27,7 @@ void topological_sort(const Graph& g, Output_iter res) {
 	dfs(g, Topological_visitor<Output_iter>{res});
 }
 
-struct Cycle_visitor : public Graph_visitor {
+struct Cycle_visitor : public DFS_visitor {
 	bool has_backedge {false};
 	template <typename Graph>
 	void back_edge(typename Graph::vertex_type, const Graph&) {has_backedge = true;}	
@@ -48,7 +51,7 @@ Graph transpose(const Graph& g) {
 		}
 		g_t.add_vertex(*u);
 	}
-	return std::move(g_t);
+	return g_t;
 } 
 
 // for directed graphs, strongly connected components
@@ -57,7 +60,7 @@ Graph transpose(const Graph& g) {
 // then traversing full cycle to get entire component
 // no easy way to get sink vertex, so use source vertices of the transpose
 template <typename Output_iter>
-struct Inorder_finish_visitor : public Graph_visitor {
+struct Inorder_finish_visitor : public DFS_visitor {
 	Output_iter out;
 	Inorder_finish_visitor(Output_iter o) : out{o} {}
 
@@ -70,7 +73,7 @@ template <typename Graph>
 using Connected_set =  std::vector<std::unordered_set<typename Graph::vertex_type>>;
 
 template <typename Graph>
-struct Connected_visitor : public Graph_visitor {
+struct Connected_visitor : public DFS_visitor {
 	using V = typename Graph::vertex_type;
 	Connected_set<Graph> component_set;
 	std::vector<V> finish_order;
@@ -109,6 +112,108 @@ Connected_set<Graph> strongly_connected(const Graph& g) {
 	dfs(gt, visitor);
 
 	return std::move(visitor.component_set);
+}
+
+
+// Prim's algorithm for minimum spanning tree
+// connected undirected graph, assuming positive weight
+template <typename V>
+struct Prim_vertex {
+	V parent;
+	size_t min_edge;
+	Prim_vertex() = default;
+	Prim_vertex(V v) : parent{v}, min_edge{unsigned_infinity} {}
+};
+template <typename Property_map>
+struct Prim_cmp {
+	using V = typename Property_map::key_type;
+	const Property_map& property;
+	Prim_cmp(const Property_map& p) : property(p) {}
+
+	bool operator()(const V& u, const V& v) const {
+		return property.find(u)->second.min_edge < property.find(v)->second.min_edge; 
+	}
+};
+
+// MST property map
+template <typename Graph>
+using MPM = std::map<typename Graph::vertex_type, Prim_vertex<typename Graph::vertex_type>>;
+
+template <typename V>
+struct Edge {
+	V u, v;
+	int w;
+	template <typename Adj_iter>
+	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w{b.weight()} {}
+	V source() const   {return u;}
+	V dest() const     {return v;}
+	int weight() const {return w;}
+};
+
+struct Span_visitor {
+	template <typename Property_map, typename Queue>
+	void relax(Property_map&, Queue&, 
+		const Edge<typename Property_map::key_type>&) {}
+};
+
+struct MST_visitor : public Span_visitor {
+	// relaxes an edge if it meets certain requirements
+	template <typename Property_map, typename Queue>
+	void relax(Property_map& property, Queue& queue, 
+		const Edge<typename Property_map::key_type>& edge) {
+		// const Edge<typename Property_map::key_type>& edge, Op addition = []{}) {
+		size_t d_i {queue.key(edge.dest())};
+		// d_i == 0 means not in queue
+		if (d_i && edge.weight() < property[edge.dest()].min_edge) {
+			property[edge.dest()].min_edge = edge.weight();
+			property[edge.dest()].parent = edge.source();
+			// fix heap property
+			queue.check_key(d_i);
+		}		
+	}
+};
+
+template <typename Graph, typename Visitor = MST_visitor>
+MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
+	using V = typename Graph::vertex_type;
+	using Cmp = Prim_cmp<MPM<Graph>>;
+	// property map of each vertex to their min_edge
+	MPM<Graph> property;
+	// comparator querying on min_edge
+	Cmp cmp {property};
+
+	Heap<V, Cmp> queue {cmp};
+
+	for (V v : g) property[v] = Prim_vertex<V>{v};
+	// let root of MST be the smallest vertex by name
+	V root {*g.begin()};
+	property[root].min_edge = 0;
+
+	// batch insert is O(n) rather than O(nlgn) of inserting each sequentially
+	queue.batch_insert(g.begin(), g.end());
+
+	while (!queue.empty()) {
+		V u {queue.extract_top()};
+		// for each adjacent vertex
+		auto edges = g.adjacent(u);
+		for (auto v = edges.first; v != edges.second; ++v) {
+			// relaxation
+			visitor.relax(property, queue, {u, v});
+		}
+	}
+	return property;
+}
+
+// convert a property map to a tree
+template <typename Property_map>
+graph<typename Property_map::key_type> mpm_to_tree(const Property_map& property) {
+	using V = typename Property_map::key_type;
+	graph<V> g_mst;
+	for (const auto& edge : property) 
+		// cannot have self loops in tree, means root
+		if (edge.first == edge.second.parent) g_mst.add_vertex(edge.first);
+		else g_mst.add_edge(edge.first, edge.second.parent, edge.second.min_edge);
+	return g_mst;
 }
 
 }

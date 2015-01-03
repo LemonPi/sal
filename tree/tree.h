@@ -62,8 +62,8 @@ template <typename Node, typename Op>
 void preorder_walk(Node* start, Op op) {
 	if (start != Node::nil) {
 		op(start);
-		inorder_walk(start->left, op);
-		inorder_walk(start->right, op);
+		preorder_walk(start->left, op);
+		preorder_walk(start->right, op);
 	}
 }
 template <typename Node, typename Op>
@@ -77,8 +77,8 @@ void inorder_walk(Node* start, Op op) {
 template <typename Node, typename Op>
 void postorder_walk(Node* start, Op op) {
 	if (start != Node::nil) {
-		inorder_walk(start->left, op);
-		inorder_walk(start->right, op);
+		postorder_walk(start->left, op);
+		postorder_walk(start->right, op);
 		op(start);
 	}
 }

@@ -97,7 +97,7 @@ VBP<Graph> bfs(const Graph& g, typename Graph::vertex_type s) {
 	return std::move(property);
 }
 
-struct Graph_visitor {
+struct DFS_visitor {
 	template <typename Property_map, typename Graph>
 	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
 		std::vector<typename Graph::vertex_type> exploring;
@@ -123,7 +123,7 @@ struct Graph_visitor {
 
 // for DFS on only 1 source vertex
 template <typename Graph>
-struct Graph_single_visitor : public Graph_visitor {
+struct Graph_single_visitor : public DFS_visitor {
 	using V = typename Graph::vertex_type;
 	V source;
 	Graph_single_visitor(V s) : source{s} {}
@@ -137,8 +137,8 @@ struct Graph_single_visitor : public Graph_visitor {
 
 // depth first search, used usually in other algorithms
 // explores all vertices of a graph, produces a depth-first forest
-template <typename Graph, typename Visitor = Graph_visitor>
-VDP<Graph> dfs(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
+template <typename Graph, typename Visitor = DFS_visitor>
+VDP<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 	using V = typename Graph::vertex_type;
 	VDP<Graph> property;
 	// use visitor to initialize stack (order of DFS)
@@ -186,8 +186,8 @@ VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s, int) {	// dummy ar
 }
 
 // recursive version of dfs, much simpler, but can blow up the stack
-template <typename Graph, typename Visitor = Graph_visitor>
-VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
+template <typename Graph, typename Visitor = DFS_visitor>
+VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 	VDP<Graph> property;
 	using V = typename Graph::vertex_type;
 	// no need to reverse traverse now
@@ -205,8 +205,8 @@ VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = Graph_visitor{}) {
 	return property;
 }
 // explore only 1 vertex
-template <typename Graph, typename Visitor = Graph_visitor>
-VDP<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& visitor = Graph_visitor{}) {
+template <typename Graph, typename Visitor = DFS_visitor>
+VDP<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& visitor = DFS_visitor{}) {
 	VDP<Graph> property;
 	// no need to reverse traverse now
 	for (auto v = g.begin(); v != g.end(); ++v)
