@@ -8,6 +8,7 @@
 #define IS_GREY(x) (property[x].finish == 0)
 
 namespace sal {
+constexpr size_t unsigned_infinity {std::numeric_limits<size_t>::max()};
 
 /* algorithms expects Graph to have: 
 	vertex iterators in begin() and end() (and reverse iterators in rbegin(), rend())
@@ -26,9 +27,20 @@ template <typename Graph, typename V>
 size_t dijkstra(const Graph& g, V s, V x) {
 	return 0;
 }
+template <typename V, typename E>
+struct Edge {
+	V u, v;
+	E w;
+	template <typename Adj_iter>
+	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w{b.weight()} {}
+	V source() const   {return u;}
+	V dest() const     {return v;}
+	E weight() const   {return w;}
+};
 
 template <typename V>
-struct Vertex_bfs_property {
+struct BFS_vertex {
+	using edge_type = size_t;
 	// distance estimate of s to vertex, always >= distance
 	// after completion, estimate is == distance
 	size_t distance;
@@ -37,7 +49,7 @@ struct Vertex_bfs_property {
 };
 
 template <typename V>
-struct Vertex_dfs_property {
+struct DFS_vertex {
 	// time stamps
 	// discovery and finish time, from 1 to |V|
 	size_t start;
@@ -47,26 +59,37 @@ struct Vertex_dfs_property {
 
 // resulting property maps from BFS and DFS
 template <typename V>
-using Vertex_bfs_property_map = std::unordered_map<V, Vertex_bfs_property<V>>;
+using BFS_property_map = std::unordered_map<V, BFS_vertex<V>>;
 template <typename Graph>
-using VBP = Vertex_bfs_property_map<typename Graph::vertex_type>;
+using BPM = BFS_property_map<typename Graph::vertex_type>;
 
 template <typename V>
-using Vertex_dfs_property_map = std::unordered_map<V, Vertex_dfs_property<V>>;
+using DFS_property_map = std::unordered_map<V, DFS_vertex<V>>;
 template <typename Graph>
-using VDP = Vertex_dfs_property_map<typename Graph::vertex_type>;
+using DPM = DFS_property_map<typename Graph::vertex_type>;
 
 // assumes unweighted graph, and assumes V is simple type (name of vertex)
 // works with directed and undirected
 // O(V + E) time
 // creates a vertex property map relative to source (breadth first tree)
-constexpr size_t unsigned_infinity {std::numeric_limits<size_t>::max()};
 
+struct BFS_visitor {
+	template <typename Property_map, typename Queue>
+	void relax(Property_map& property, Queue& exploring, 
+		const Edge<typename Property_map::key_type, 
+				   typename Property_map::mapped_type::edge_type>& edge) {
+		if (property[edge.dest()].distance == unsigned_infinity) {
+			property[edge.dest()].distance = property[edge.source()].distance + 1;
+			property[edge.dest()].parent = edge.source();
+			exploring.push(edge.dest());
+		}
+	}
+};
 
-template <typename Graph>
-VBP<Graph> bfs(const Graph& g, typename Graph::vertex_type s) {
+template <typename Graph, typename Visitor = BFS_visitor>
+BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = BFS_visitor{}) {
 	using V = typename Graph::vertex_type;
-	VBP<Graph> property;
+	BPM<Graph> property;
 	for (auto v = g.begin(); v != g.end(); ++v) 
 		property[*v] = {unsigned_infinity, *v};
 
@@ -77,24 +100,17 @@ VBP<Graph> bfs(const Graph& g, typename Graph::vertex_type s) {
 	exploring.push(s);
 
 	while (!exploring.empty()) {
-		V cur {exploring.back()};
-		// leaving exploring means fully explored
+		V u {exploring.back()};
 		exploring.pop();
-
-		// explore adjacent to current
-		auto edges = g.adjacent(cur);
-		for (auto adj = edges.first; adj != edges.second; ++adj) {
-			auto& n_p = property[*adj];
+		// leaving exploring means fully explored
+		// for each adjacent vertex
+		auto edges = g.adjacent(u);
+		for (auto v = edges.first; v != edges.second; ++v) {
 			// relax
-			if (n_p.distance == unsigned_infinity) {
-				n_p.distance = property[cur].distance + 1;
-				n_p.parent = cur;
-				exploring.push(*adj);
-			}
+			visitor.relax(property, exploring, {u, v});
 		}
 	}
-
-	return std::move(property);
+	return property;
 }
 
 struct DFS_visitor {
@@ -128,7 +144,7 @@ struct Graph_single_visitor : public DFS_visitor {
 	V source;
 	Graph_single_visitor(V s) : source{s} {}
 	template <typename Property_map>
-	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
+	std::vector<V> initialize_vertex(Property_map& property, const Graph& g) {
 		for (auto v = g.rbegin(); v != g.rend(); ++v)
 			property[*v] = {unsigned_infinity, 0, *v};
 		return {source};
@@ -138,9 +154,9 @@ struct Graph_single_visitor : public DFS_visitor {
 // depth first search, used usually in other algorithms
 // explores all vertices of a graph, produces a depth-first forest
 template <typename Graph, typename Visitor = DFS_visitor>
-VDP<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
+DPM<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 	using V = typename Graph::vertex_type;
-	VDP<Graph> property;
+	DPM<Graph> property;
 	// use visitor to initialize stack (order of DFS)
 	std::vector<V> exploring {visitor.initialize_vertex(property, g)};
 	
@@ -181,14 +197,14 @@ VDP<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 }
 // overload for specifying a source, can't use other visitors
 template <typename Graph>
-VDP<Graph> dfs(const Graph& g, typename Graph::vertex_type s, int) {	// dummy argument for overloading
+DPM<Graph> dfs(const Graph& g, typename Graph::vertex_type s, int) {	// dummy argument for overloading
 	return dfs(g, Graph_single_visitor<Graph>{s});
 }
 
 // recursive version of dfs, much simpler, but can blow up the stack
 template <typename Graph, typename Visitor = DFS_visitor>
-VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
-	VDP<Graph> property;
+DPM<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
+	DPM<Graph> property;
 	using V = typename Graph::vertex_type;
 	// no need to reverse traverse now
 	std::vector<V> exploring {visitor.initialize_vertex(property, g)};
@@ -206,8 +222,8 @@ VDP<Graph> dfs_recurse(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 }
 // explore only 1 vertex
 template <typename Graph, typename Visitor = DFS_visitor>
-VDP<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& visitor = DFS_visitor{}) {
-	VDP<Graph> property;
+DPM<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& visitor = DFS_visitor{}) {
+	DPM<Graph> property;
 	// no need to reverse traverse now
 	for (auto v = g.begin(); v != g.end(); ++v)
 		property[*v] = {unsigned_infinity, 0, *v};

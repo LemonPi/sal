@@ -117,12 +117,13 @@ Connected_set<Graph> strongly_connected(const Graph& g) {
 
 // Prim's algorithm for minimum spanning tree
 // connected undirected graph, assuming positive weight
-template <typename V>
+template <typename V, typename E = size_t>
 struct Prim_vertex {
+	using edge_type = E;
 	V parent;
-	size_t min_edge;
+	E min_edge;
 	Prim_vertex() = default;
-	Prim_vertex(V v) : parent{v}, min_edge{unsigned_infinity} {}
+	Prim_vertex(V v) : parent{v}, min_edge{std::numeric_limits<E>::max()} {}
 };
 template <typename Property_map>
 struct Prim_cmp {
@@ -137,30 +138,14 @@ struct Prim_cmp {
 
 // MST property map
 template <typename Graph>
-using MPM = std::map<typename Graph::vertex_type, Prim_vertex<typename Graph::vertex_type>>;
+using MPM = std::map<typename Graph::vertex_type, Prim_vertex<typename Graph::vertex_type, typename Graph::edge_type>>;
 
-template <typename V>
-struct Edge {
-	V u, v;
-	int w;
-	template <typename Adj_iter>
-	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w{b.weight()} {}
-	V source() const   {return u;}
-	V dest() const     {return v;}
-	int weight() const {return w;}
-};
-
-struct Span_visitor {
-	template <typename Property_map, typename Queue>
-	void relax(Property_map&, Queue&, 
-		const Edge<typename Property_map::key_type>&) {}
-};
-
-struct MST_visitor : public Span_visitor {
+struct MST_visitor : public BFS_visitor {
 	// relaxes an edge if it meets certain requirements
 	template <typename Property_map, typename Queue>
 	void relax(Property_map& property, Queue& queue, 
-		const Edge<typename Property_map::key_type>& edge) {
+		const Edge<typename Property_map::key_type, 
+				   typename Property_map::mapped_type::edge_type>& edge) {
 		// const Edge<typename Property_map::key_type>& edge, Op addition = []{}) {
 		size_t d_i {queue.key(edge.dest())};
 		// d_i == 0 means not in queue
@@ -178,6 +163,7 @@ struct MST_visitor : public Span_visitor {
 template <typename Graph, typename Visitor = MST_visitor>
 MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
 	using V = typename Graph::vertex_type;
+	using E = typename Graph::edge_type;
 	using Cmp = Prim_cmp<MPM<Graph>>;
 	// property map of each vertex to their min_edge
 	MPM<Graph> property;
@@ -186,7 +172,7 @@ MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
 
 	Heap<V, Cmp> queue {cmp};
 
-	for (V v : g) property[v] = Prim_vertex<V>{v};
+	for (V v : g) property[v] = Prim_vertex<V,E>{v};
 	// let root of MST be the smallest vertex by name
 	V root {*g.begin()};
 	property[root].min_edge = 0;
