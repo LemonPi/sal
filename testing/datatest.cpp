@@ -39,8 +39,42 @@ void test_pow(bool print) {
 }
 
 void test_heap(bool print) {
-	sal::Heap<int> h {3, 4, 6, 5, 1, 8, 11, 12};
-	if (!h.is_maxheap()) cout << "FAILED...Heap construction\n";
+	sal::Heap<int> h2 {3, 4, 6, 5, 1, 8, 11, 12};
+	if (print) sal::print(h2);
+	std::make_heap(h2.begin(), h2.end());
+	if (print) sal::print(h2);
+	// should be the same after trying to makeheap
+
+	if (!h2.is_maxheap()) cout << "FAILED...Heap construction\n";
+	// constructing non-POD
+	sal::Heap<std::string> h2o {"probably not POD", "another string", "is this actually string?"};
+	if (print) PRINTLINE(std::is_pod<std::string>::value);
+
+	using MPM = std::map<int, sal::Prim_vertex<int>>;
+	using Cmp = sal::Prim_cmp<MPM>;
+
+	MPM property;
+
+	// random testing value % 6
+	std::vector<int> order {3, 4, 6, 5, 1, 8, 11, 12};
+	for (int v : order) { property[v] = sal::Prim_vertex<int>{v}; property[v].min_edge = v % 6; }
+
+	// create comparator
+	Cmp cmp {property};
+
+	sal::Heap<int, Cmp> h {cmp};
+	
+	h.batch_insert(order.begin(), order.end());
+	 
+	property[6].min_edge = 10;
+	h.check_key(h.key(6));
+
+
+	while (!h.empty()) {
+		auto top = h.extract_top();
+		if (print) std::cout << top << '\t' << std::endl;
+		if (!h.correct_index()) PRINTLINE("INCORRECT INDEXING");
+	}
 }
 
 void test_tree(bool print) {
@@ -266,7 +300,7 @@ void test_mst(bool print) {
 	// to actually create the tree, simply iterate over vertex and add edge between parent and child
 	sal::graph<char> min_circuit {sal::mpm_to_tree(mst)};
 
-	if (print) std::cout << g_mst;
+	if (print) std::cout << min_circuit;
 
 	sal::graph<char> h {{'a','b',6},{'a','c',12},{'b','c',5},{'b','e',14},{'b','h',8},
 					{'c','d',9},{'c','f',7},{'e','h',3},{'f','h',10},{'f','g',15}};
@@ -290,7 +324,7 @@ int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	// test_heap(print);
+	test_heap(print);
 	// test_tree(print);
 	// test_order_tree(print);
 	// test_interval_set(print);

@@ -140,8 +140,8 @@ public:
 	const_iterator begin() const {return elems.cbegin() + 1;}
 	const_iterator end() const 	 {return elems.cend();}
 
-	bool is_maxheap() const {return std::is_heap(elems.begin()+1, elems.end(), cmp);}
-	bool is_minheap() const {return std::is_heap(elems.rbegin(), elems.rend()-1, cmp);}
+	bool is_maxheap() const {return std::is_heap(elems.begin()+1, elems.end());}
+	bool is_minheap() const {return std::is_heap(elems.begin()+1, elems.end(), std::greater<T>{});}
 	bool correct_index() const {
 		for (auto itr : index) if (itr.first != elems[itr.second])
 			return false;
