@@ -99,6 +99,7 @@ Algorithms
 - random integer generation
 - timer
 - perturb a sequence (soft random shuffle)
+- fast pointer hashing
 
 
 Data structures
