@@ -6,6 +6,7 @@ A C++ header only library containing efficient algorithms and data structures im
 Simplicity here refers to how close the implementation matches the core concepts of each algorithm,
 rather than the triviality of each algorithm.
 
+
 <br>
 Features
 ---
@@ -17,6 +18,14 @@ decoupled algorithms so most files are standalone
 simple implementation of efficient algorithms 
 - learning friendly
 - engineered for readability
+
+
+<br>
+Getting started
+---
+1. open cmd/terminal and change directory to somewhere in your include path (ex. /usr/local/include)
+2. type `git clone --recursive git@github.com:LemonPi/sal.git`
+3. if you missed #2 and cloned it without `--recursive`, get the submodules with `git submodule update --init`
 
 <br>
 Motivation
@@ -96,6 +105,14 @@ Data structures
 ---
 ###### [sal/data/list.h --- basic linked list](#list)
 
+###### [sal/data/heap.h --- binary heap](#heap)
+- maxheap by default
+- Ө(1) time search
+- Ө(n) time construction and batch insert
+- Ө(lgn) time insert 
+- Ө(lgn) time extract top
+- Ө(lgn) time change key (check key if value was indirectly changed)
+
 ###### [sal/data/matrix.h --- 2D matrix](#matrix)
 - square identities
 - random matrices
@@ -130,6 +147,7 @@ Data structures
 - check for cycle
 - transpose of graph
 - strongly connected components
+- minimum spanning tree
 
 Example usage
 ===
@@ -357,7 +375,7 @@ sum_factors(num);
 
 
 
-// factorize primes or semiprimes -----------------------------
+// factorize primes or semiprimes ----
 big_int semiprime = 32452843 * 32452867;	// 1053187797650881
 
 // would still not be too slow
@@ -402,7 +420,7 @@ timing.tonow();
 ```
 ###### sal/data/list.h --- <a name="list">basic linked list</a>
 ```C++
-// Construction ---------------------------
+// Construction ----------------------
 Basic_list<int> l {5, 7, 11, 13, 17, 19};
 std::cout << l;
 // 5 7 11 13 17 19
@@ -417,7 +435,7 @@ std::cout << l.kth_last(2)->data << std::endl;
 
 
 
-// Modification -------------------------
+// Modification ----------------------
 // insert at head
 l.insert(3);
 l.print();
@@ -439,9 +457,111 @@ l.erase(13);
 l.remove_dup();
 // 3 5 7 11 17 19 23
 ```
+
+###### sal/data/heap.h --- <a name="heap">Binary heap</a>
+```C++
+// great for use as a priority queue
+// advantage over std::priority_queue or using make_heap and friends
+// can find key in Ө(1) time and change its value in Ө(lgn) time
+// can also check key for indirect value update (from comparator)
+
+
+// Construction ----------------------
+// by default maxheap using std::greater<T> as Cmp
+Heap<int> maxheap {3, 4, 6, 5, 1, 8, 11, 12};
+
+// can also construct via iterator range
+std::vector<int> temp {3, 4, 6, 5, 1, 8, 11, 12};
+Heap<int> maxheap2 {temp.begin(), temp.end()}
+
+
+// give a different comparator
+Heap<int, std::less<int>> minheap {3, 4, 6, 5, 1, 8, 11, 12};
+
+
+// a stateful comparator, for example the one used in minimum spanning tree
+// looks up vertices' minimum edge in each step of Prim's algorithm
+template <typename Property_map>
+struct Prim_cmp {
+	using V = typename Property_map::key_type;
+	// keep reference to a mapping that might change
+	const Property_map& property;
+	Prim_cmp(const Property_map& p) : property(p) {}
+
+	// u and v will always be valid vertices, so no need to check for not found
+	bool operator()(const V& u, const V& v) const {
+		return property.find(u)->second.min_edge < property.find(v)->second.min_edge; 
+	}
+};
+
+// minimum spanning tree's property map
+using Cmp = Prim_cmp<MPM<Graph>>;
+using V = Graph::vertex_type;
+
+MPM<Graph> property;
+Cmp cmp {property};
+
+// ... load necessary info into property
+
+// constructor for stateful comparator
+Heap<V, Cmp> queue {cmp};
+// Ө(n) batch insert
+queue.batch_insert(g.begin(), g.end());
+
+
+
+
+// Queries ---------------------------
+// looking at top (min in a minheap, max in a maxheap)
+maxheap.top();
+// value_type 12
+
+// index used to change and check elements held at key Ө(1) lookup
+maxheap.key(12);
+// size_t 1
+
+
+
+// Iterations ------------------------
+// begin and end as per standard
+for (auto v : maxheap) std::cout << v << ' ';
+
+
+
+// Modification ----------------------
+// pop top and return it
+maxheap.extract_top();
+// value_type 12 (top() did not modify top)
+
+// change key to something that has "greater" value
+// for maxheap: increase key, for minheap: decrease key
+// does nothing if you attempt to decrease value
+maxheap.change_key(maxheap.key(12), 13);
+
+// directly change using value (does a key lookup in the background)
+maxheap.change_val(13, 15);
+
+
+// indirectly change key by affecting the comparator
+// for example in the relaxation step of minimum spanning tree
+property[edge.dest()].min_edge = edge.weight();
+// to affect change in the queue, check the key (will update it if heap violations exist)
+queue.check_key(queue.key(edge.dest()));
+
+
+
+// inserts into proper position
+maxheap.insert(2);
+
+
+// batch insertion, as shown above
+maxheap.batch_insert(temp.begin(), temp.end());
+
+
+```
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
 ```C++
-// Construction ---------------------------
+// Construction ----------------------
 Matrix<int> A {{2, 5, 6},
 	       {3, 4, -3},
 	       {7, 8, 0}};
@@ -464,7 +584,7 @@ A.get(1, 2);
 
 
 
-// Arithmetic Operations ---------------------------
+// Arithmetic Operations -------------
 Matrix<int> F {{1, 1},
 			   {1, 0}};
 // matrix exponentiation
@@ -490,7 +610,7 @@ Matrix<int> C = A * B;
 
 
 
-// Modification -------------------------
+// Modification ----------------------
 // individual elements can be changed by get()
 // size modification
 Matrix<int> id3 {identity<int>(3)};
@@ -516,7 +636,7 @@ C.rotate();
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
 ```C++
-// Basic tree usage -------------------------
+// Basic tree usage ------------------
 Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 
 // insert element
@@ -535,7 +655,7 @@ t.find(11);
 
 
 
-// Iterations --------------------------------
+// Iterations ------------------------
 // iteration over adjacent nodes (left to right)
 for (auto adjacent = node.begin(); adjacent != node.end(); ++adjacent)
 	std::cout << *adjacent << ' ';
@@ -617,7 +737,7 @@ using Order_tree = Order_augment<Order_node<T>>;
 
 
 
-// Utilities ----------------------------
+// Utilities -------------------------
 // non-member functions that work on nodes only
 Order_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 using NP = Order_node<int>*;
@@ -649,9 +769,8 @@ postorder_walk(node.get(), [](const NP node){std::cout << node->key << ' ';});
 
 
 
-
 // Order statistics tree usage (with t above)
-// Queries ----------------------------
+// Queries ---------------------------
 // selecting ith smallest
 t.select(4);
 t[4];
@@ -667,14 +786,14 @@ t.rank(node.get());
 ###### sal/data/interval.h --- <a name="interval">interval tree</a>
 ```C++
 // for finding overlapping intervals, useful for scheduling and collision detection
-// Construction ------------------------
+// Construction ----------------------
 Interval_set<int> t {{16,21},{8,9},{5,8},{15,23},{25,30},{0, 3},{6, 10},{17,19}, 
 					{26,26}, {19,20}};
 
 
 
 
-// Queries ----------------------------
+// Queries ---------------------------
 // find any interval overlapping [22, 25]
 // overlap by default includes edge, so [25, 26] overlaps [22, 25]
 // easily adjustable by changing the strictness of ordering in the no_overlap method
@@ -699,7 +818,7 @@ t.find_exact(16, 21);
 ```
 ###### sal/data/graph.h --- <a name="graph">directed and undirected graphs</a>
 ```C++
-// Construction ------------------------
+// Construction ----------------------
 // unweighted is equivalent to having uniform weight 1
 // undirected and unweighted graph by default
 graph<int> g {{5,1},{5,4},{5,10},{1,4},{4,10}};
@@ -716,8 +835,7 @@ digraph<int> g {{5,1,10},{5,4,13},{5,10,17},{1,4,19},{4,10,23}};
 
 
 
-
-// Queries ----------------------------
+// Queries ---------------------------
 // number of vertex
 g.num_vertex();
 // size_t 4
@@ -745,7 +863,7 @@ g.degree(5);
 
 
 
-// Modification -------------------------
+// Modification ----------------------
 // adding vertex (names have to be unique)
 g.add_vertex(7);
 
@@ -756,7 +874,7 @@ g.add_edge(6, 4);
 
 
 
-// Iterations ---------------------------
+// Iterations ------------------------
 // iterate over all vertices ordered by <
 for (auto v = g.begin(); v != g.end(); ++v)
 	std::cout << v;
@@ -793,7 +911,7 @@ for (auto u = v.begin(); u != v.end(); ++u)
   		weight() gives weight of edge to destination vertex
 */
 
-// breadth first search ----------------
+// breadth first search --------------
 // usually used to find distances to a source node
 // works with directed and undirected but have to be unweighted
 graph<char> g {{'v','r'},{'r','s'},{'s','w'},{'w','t'},{'t','x'},{'w','x'},{'t','u'},
@@ -819,7 +937,7 @@ property['u'].distance;
 
 
 
-// depth first search ------------------
+// depth first search ----------------
 // usually used as part of other algorithms
 
 // can also function to find shortest number of edges from a source node
@@ -888,7 +1006,7 @@ struct Graph_visitor {
 ```
 ###### sal/data/graph/utility.h --- <a name="graph_utility">important graph algorithms</a>
 ```C++
-// topological sort -----------------------
+// topological sort ------------------
 // for directed acyclic graph (dag)
 // orders all vertices so that parent vertices are always before children
 // if vertices are events, then sorting gives one possible sequence of events
@@ -910,7 +1028,7 @@ for (const std::string& item : dress_order) std::cout << item << ' ';
 
 
 
-// cycle testing -----------------------
+// cycle testing ---------------------
 // some algorithms need directed acyclic graphs (dag)
 has_cycle(dress);
 // bool true (if false, then the ordering given would be false)
@@ -918,7 +1036,7 @@ has_cycle(dress);
 
 
 
-// transpose -----------------------
+// transpose -------------------------
 // create graph with all the edges reversed
 transpose(dress);
 // graph (of taking off clothes)
@@ -929,7 +1047,7 @@ transpose(dress);
 
 
 
-// strongly connected components --------------------
+// strongly connected components -----
 // a SCC is a part of a graph where any vertex can get to any other vertex inside it
 // could model trading networks and the like
 digraph<std::string> trade {{"China","USA"},{"USA","EU"},{"USA","Canada"},{"USA","Russia"},{"EU","Brazil"},{"EU","France"},
@@ -947,3 +1065,22 @@ for (const auto& bloc: mutual_partners) {
 // USA China Canada      EU Brazil      Russia France   	Australia
 ```
 
+// minimum spanning tree -------------
+```C++
+// for a connected, undirected graph with positive edge weights
+// find the cheapest way to connect all the vertices
+// ex. connecting nodes on a circuit board
+graph<char> circuit {{'a','b',4},{'a','h',8},{'b','h',11},{'b','c',8},{'c','i',2},
+				{'c','f',4},{'c','d',7},{'d','f',14},{'d','e',9},{'e','f',10},{'f','g',2},
+				{'i','h',7},{'i','g',6},{'h','g',1}};
+
+// cheapest way to connect all the circuit nodes (suppose edges were wire lengths)
+auto mst = sal::min_span_tree(salesman);
+// each vertex-property pair from the MST property map
+// hold parent and the min_edge cost to parent
+
+
+// to actually create the tree, simply iterate over vertex and add edge between parent and child
+graph<char> min_circuit {mpm_to_tree(mst)};
+
+```
