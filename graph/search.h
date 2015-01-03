@@ -21,18 +21,12 @@ constexpr size_t unsigned_infinity {std::numeric_limits<size_t>::max()};
   		weight() gives weight of edge to destination vertex
 */
 
-
-// assumes non-negative weighted edges, O((V+E)lgV) with binary heap (priority queue)
-template <typename Graph, typename V>
-size_t dijkstra(const Graph& g, V s, V x) {
-	return 0;
-}
 template <typename V, typename E>
 struct Edge {
 	V u, v;
 	E w;
 	template <typename Adj_iter>
-	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w{b.weight()} {}
+	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w(b.weight()) {}
 	V source() const   {return u;}
 	V dest() const     {return v;}
 	E weight() const   {return w;}
@@ -46,6 +40,7 @@ struct BFS_vertex {
 	size_t distance;
 	// flattened tree to trace back path, unnecessary if only path weight needed
 	V parent;
+	size_t edge() const {return 1;}
 };
 
 template <typename V>
@@ -55,6 +50,7 @@ struct DFS_vertex {
 	size_t start;
 	size_t finish;
 	V parent;
+	size_t edge() const {return 1;}
 };
 
 // resulting property maps from BFS and DFS
@@ -84,14 +80,19 @@ struct BFS_visitor {
 			exploring.push(edge.dest());
 		}
 	}
+	// BFS doesn't load a queue to explore, start at root, so return void
+	template <typename Property_map, typename Graph>
+	void initialize_vertex(Property_map& property, const Graph& g) {
+		for (auto v = g.rbegin(); v != g.rend(); ++v) 
+			property[*v] = {unsigned_infinity, *v};
+	}	
 };
 
 template <typename Graph, typename Visitor = BFS_visitor>
 BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = BFS_visitor{}) {
 	using V = typename Graph::vertex_type;
 	BPM<Graph> property;
-	for (auto v = g.begin(); v != g.end(); ++v) 
-		property[*v] = {unsigned_infinity, *v};
+	visitor.initialize_vertex(property, g);
 
 	property[s].distance = 0;
 	property[s].parent = s;

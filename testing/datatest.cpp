@@ -298,7 +298,7 @@ void test_mst(bool print) {
 	
 	if (print) for (char v : circuit) PRINTLINE(v << " <- " << mst[v].parent);
 	// to actually create the tree, simply iterate over vertex and add edge between parent and child
-	sal::graph<char> min_circuit {sal::mpm_to_tree(mst)};
+	sal::graph<char> min_circuit {sal::pm_to_tree(mst)};
 
 	if (print) std::cout << min_circuit;
 

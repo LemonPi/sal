@@ -124,6 +124,7 @@ struct Prim_vertex {
 	E min_edge;
 	Prim_vertex() = default;
 	Prim_vertex(V v) : parent{v}, min_edge{std::numeric_limits<E>::max()} {}
+	E edge() const {return min_edge;}
 };
 template <typename Property_map>
 struct Prim_cmp {
@@ -156,20 +157,21 @@ struct MST_visitor : public BFS_visitor {
 			queue.check_key(d_i);
 		}		
 	}
+
 };
 
 // can be made faster to O(E) time if edge weights are integers using an array as the queue
 // with each slot holding doubly linked list of vertices with that min_edge
-template <typename Graph, typename Visitor = MST_visitor>
-MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
+template <typename Graph>
+MPM<Graph> min_span_tree(const Graph& g) {
 	using V = typename Graph::vertex_type;
 	using E = typename Graph::edge_type;
 	using Cmp = Prim_cmp<MPM<Graph>>;
+	MST_visitor visitor;
 	// property map of each vertex to their min_edge
 	MPM<Graph> property;
 	// comparator querying on min_edge
 	Cmp cmp {property};
-
 	Heap<V, Cmp> queue {cmp};
 
 	for (V v : g) property[v] = Prim_vertex<V,E>{v};
@@ -193,14 +195,15 @@ MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
 }
 
 // convert a property map to a tree
+// expects property vertex to have parent and edge() which returns 1 for unweighted
 template <typename Property_map>
-graph<typename Property_map::key_type> mpm_to_tree(const Property_map& property) {
+graph<typename Property_map::key_type> pm_to_tree(const Property_map& property) {
 	using V = typename Property_map::key_type;
 	graph<V> g_mst;
 	for (const auto& edge : property) 
 		// cannot have self loops in tree, means root
 		if (edge.first == edge.second.parent) g_mst.add_vertex(edge.first);
-		else g_mst.add_edge(edge.first, edge.second.parent, edge.second.min_edge);
+		else g_mst.add_edge(edge.first, edge.second.parent, edge.second.edge());
 	return g_mst;
 }
 
