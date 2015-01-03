@@ -173,6 +173,8 @@ struct MST_visitor : public Span_visitor {
 	}
 };
 
+// can be made faster to O(E) time if edge weights are integers using an array as the queue
+// with each slot holding doubly linked list of vertices with that min_edge
 template <typename Graph, typename Visitor = MST_visitor>
 MPM<Graph> min_span_tree(const Graph& g, Visitor&& visitor = MST_visitor{}) {
 	using V = typename Graph::vertex_type;

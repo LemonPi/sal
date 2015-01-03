@@ -6,11 +6,11 @@
 
 namespace sal {
 // undirected by default
-template <typename V>
-using graph = Adjacency_list<V>;
+template <typename V, typename E = int>
+using graph = Adjacency_list<V,E>;
 using graph_alt = Adjacency_matrix;
 // directed
-template <typename V>
-using digraph = Adjacency_list_directed<V>;
+template <typename V, typename E = int>
+using digraph = Adjacency_list_directed<V,E>;
 
 }

@@ -7,13 +7,13 @@
 namespace sal {
 
 
-template <typename V>
+template <typename V, typename E = int>
 struct WEdge {
 	V source;
 	V dest;
-	int weight;
+	E weight;
 	// can't maintain as POD because V might not be POD
-	WEdge(V u, V v, int w) : source{u}, dest{v}, weight{w} {} 
+	WEdge(V u, V v, E w) : source{u}, dest{v}, weight{w} {} 
 };
 template <typename V>
 struct UEdge {
@@ -28,6 +28,7 @@ template <typename Iter>
 struct Adjacent_iterator {
 	using CR = const Adjacent_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
+	using E = typename Iter::value_type::second_type;
 	Iter cur;
 
 	void operator++() {++cur;}
@@ -39,13 +40,14 @@ struct Adjacent_iterator {
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	V& dest() {return cur->first;}
-	int& weight() {return cur->second;}
+	E& weight() {return cur->second;}
 	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << itr.cur->first << ' '; return os;}
 };
 template <typename Iter>
 struct Adjacent_const_iterator {
 	using CR = const Adjacent_const_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
+	using E = typename Iter::value_type::second_type;
 	Iter cur;
 
 	void operator++() {++cur;}
@@ -57,7 +59,7 @@ struct Adjacent_const_iterator {
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
 	V dest() {return cur->first;}
-	int weight() {return cur->second;}
+	E weight() {return cur->second;}
 };
 
 // iterate over vertices of a graph
@@ -66,7 +68,7 @@ template <typename Iter>
 struct Vertex_iterator {
 	using CR = const Vertex_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
-	using weight_type = typename Iter::value_type::second_type::value_type;
+	using E = typename Iter::value_type::second_type::value_type;
 	using adjacent_iterator = Adjacent_iterator<typename Iter::value_type::second_type::iterator>;
 	Iter cur;
 
@@ -78,7 +80,7 @@ struct Vertex_iterator {
 	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
-	int edge(V adj) {return *cur->second.find(adj);}
+	E& edge(V adj) {return *cur->second.find(adj);}
 	std::pair<adjacent_iterator, adjacent_iterator> adjacent() {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}
@@ -90,7 +92,7 @@ template <typename Iter>
 struct Vertex_const_iterator {
 	using CR = const Vertex_const_iterator<Iter>&;
 	using V = typename Iter::value_type::first_type;
-	using weight_type = typename Iter::value_type::second_type::value_type;
+	using E = typename Iter::value_type::second_type::value_type;
 	using adjacent_const_iterator = Adjacent_const_iterator<typename Iter::value_type::second_type::const_iterator>;
 	Iter cur;
 
@@ -102,7 +104,7 @@ struct Vertex_const_iterator {
 	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
 	bool operator!=(CR other) {return !(*this == other);}
-	int edge(V adj) {return *cur->second.find(adj);}
+	E edge(V adj) {return *cur->second.find(adj);}
 	std::pair<adjacent_const_iterator, adjacent_const_iterator> adjacent() const {
 		return {{cur->second.begin()}, {cur->second.end()}};
 	}
@@ -112,7 +114,7 @@ struct Vertex_const_iterator {
 
 
 // undirected weighted graph implementation
-template <typename V = int, typename Edges = std::map<V, int>>
+template <typename V = int, typename E = int, typename Edges = std::map<V, E>>
 class Adjacency_list {
 protected:
 	// destination and weight
@@ -122,6 +124,7 @@ protected:
 	Adj adj;
 public:
 	using vertex_type = V;
+	using edge_type = E;
 	using adjacent_iterator = Adjacent_iterator<typename Edges::iterator>;
 	using adjacent_const_iterator = Adjacent_const_iterator<typename Edges::const_iterator>;
 	using iterator = Vertex_iterator<typename Adj::iterator>;
@@ -132,11 +135,11 @@ public:
 	Adjacency_list() = default;
 	Adjacency_list(const std::initializer_list<UEdge<V>>& l) {
 		for (const auto& edge : l) {
-			adj[edge.source][edge.dest] = 1;
-			adj[edge.dest][edge.source] = 1;
+			adj[edge.source][edge.dest] = (E)1;
+			adj[edge.dest][edge.source] = (E)1;
 		}		
 	}	
-	Adjacency_list(const std::initializer_list<WEdge<V>>& l) {
+	Adjacency_list(const std::initializer_list<WEdge<V,E>>& l) {
 		for (const auto& edge : l) {
 			adj[edge.source][edge.dest] = edge.weight;
 			adj[edge.dest][edge.source] = edge.weight;
@@ -172,7 +175,7 @@ public:
 	}
 
 	// weight of edge, 1/0 for unweighted edge
-	int weight(V u, V v) const {
+	E weight(V u, V v) const {
 		auto u_itr = adj.find(u);
 		if (u_itr == adj.end()) return 0;
 		auto v_itr = u_itr->second.find(v);
@@ -223,7 +226,7 @@ public:
 	// modifier interface
 	void add_vertex(V v) {adj[v];}
 	// undirected
-	virtual void add_edge(V u, V v, int weight = 1) {
+	virtual void add_edge(V u, V v, E weight = 1) {
 		adj[u][v] = weight;
 		adj[v][u] = weight;
 	}
@@ -245,18 +248,19 @@ public:
 };
 
 // directed adjacency list
-template <typename V = int, typename Edges = std::map<V, int>>
-class Adjacency_list_directed : public Adjacency_list<V, Edges> {
-	using Adjacency_list<V, Edges>::adj;
+template <typename V = int, typename E = int, typename Edges = std::map<V, E>>
+class Adjacency_list_directed : public Adjacency_list<V, E, Edges> {
+	using Adjacency_list<V, E, Edges>::adj;
 public:
 	using vertex_type = V;
-	using adjacent_iterator = typename Adjacency_list<V, Edges>::adjacent_iterator;
-	using adjacent_const_iterator = typename Adjacency_list<V, Edges>::adjacent_const_iterator;
-	using iterator = typename Adjacency_list<V, Edges>::iterator;
-	using const_iterator = typename Adjacency_list<V, Edges>::const_iterator;
+	using edge_type = E;
+	using adjacent_iterator = typename Adjacency_list<V, E, Edges>::adjacent_iterator;
+	using adjacent_const_iterator = typename Adjacency_list<V, E, Edges>::adjacent_const_iterator;
+	using iterator = typename Adjacency_list<V, E, Edges>::iterator;
+	using const_iterator = typename Adjacency_list<V, E, Edges>::const_iterator;
 	// constructors
 	Adjacency_list_directed() = default;
-	Adjacency_list_directed(const std::initializer_list<WEdge<V>>& l) {
+	Adjacency_list_directed(const std::initializer_list<WEdge<V,E>>& l) {
 		for (auto& edge : l) {
 			adj[edge.source][edge.dest] = edge.weight;
 			adj[edge.dest];
@@ -264,7 +268,7 @@ public:
 	}	
 	Adjacency_list_directed(const std::initializer_list<UEdge<V>>& l) {
 		for (auto& edge : l) {
-			adj[edge.source][edge.dest] = 1;
+			adj[edge.source][edge.dest] = (E)1;
 			adj[edge.dest];
 		}		
 	}
@@ -287,7 +291,7 @@ public:
 		return edges;
 	} 
 	// add edge only to source vertex
-	void add_edge(V u, V v, int weight = 1) override {
+	void add_edge(V u, V v, E weight = 1) override {
 		adj[u][v] = weight;
 		adj[v]; // default construct destination vertex
 	}
