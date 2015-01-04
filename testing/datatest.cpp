@@ -2,6 +2,7 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include "../../algo/macros.h"
 #include "../matrix.h"
 #include "../heap.h"
 #include "../tree.h"
@@ -330,6 +331,16 @@ void test_bellman_ford(bool print) {
 	if (shortest_path.empty()) PRINTLINE("FAILED...Bellman ford shortest path");
 }
 
+void test_shortest_dag(bool print) {
+	sal::digraph<char> g {{'r','s',5},{'r','t',3},{'s','t',2},{'s','x',6},{'t','x',7},
+						{'t','y',4},{'t','z',2},{'x','y',-1},{'x','z',1},{'y','z',-2}};
+	auto topo_shortest = sal::shortest_dag(g, 's');
+	if (print) for (char v : g) PRINTLINE(v << " <- " << topo_shortest[v].parent << '\t' << topo_shortest[v].distance);
+	if (topo_shortest['r'].distance != POS_INF(int) || topo_shortest['s'].distance != 0 || topo_shortest['t'].distance != 2 ||
+		topo_shortest['x'].distance != 6 || topo_shortest['y'].distance != 5 || topo_shortest['z'].distance != 3)
+		PRINTLINE("FAILED...DAG shortest path");
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
@@ -350,4 +361,5 @@ int main(int argc, char** argv) {
 	test_strongly_connected(print);
 	test_mst(print);
 	test_bellman_ford(print);
+	test_shortest_dag(print);
 }

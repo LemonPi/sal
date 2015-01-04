@@ -7,10 +7,7 @@
 #include <vector>
 #include "search.h"		// dfs used in many algorithms
 #include "../heap.h"	// used for piority queue
-// so you don't have to find it somewhere else
-#ifndef POS_INF
-#define POS_INF(T) (std::numeric_limits<T>::max())
-#endif
+#include "../../algo/macros.h"	// POS_INF
 
 namespace sal {
 // for directed acyclic graph (dag)

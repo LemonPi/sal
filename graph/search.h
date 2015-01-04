@@ -3,10 +3,8 @@
 #include <unordered_map>
 #include <limits>
 #include "adjacency_list.h"
+#include "../../algo/macros.h"
 
-#ifndef POS_INF
-#define POS_INF(T) (std::numeric_limits<T>::max())
-#endif
 #define IS_WHITE(x) (property[x].start == POS_INF(decltype(property[x].start)))
 #define IS_GREY(x) (property[x].finish == 0)
 

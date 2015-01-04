@@ -1,10 +1,8 @@
 #pragma once
+#include <deque>
 #include "search.h"		// bfs visitor
 #include "utility.h"	// topological sort
-
-#ifndef POS_INF
-#define POS_INF(T) (std::numeric_limits<T>::max())
-#endif
+#include "../../algo/macros.h"
 // subset of graph searches, specifically searching for shortest paths
 // solves (1) single-source (2) single-destination (3) single pair (4) all pairs
 
@@ -83,13 +81,13 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 // relax according to a topological sort of vertices
 // always well defined (can't have cycles)
 template <typename Graph, typename Visitor = Shortest_visitor>
-SPM<Graph> shorest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
+SPM<Graph> shortest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
 	using V = typename Graph::vertex_type;
 	SPM<Graph> property;
 	visitor.initialize_vertex(property, g, s);
 
 	// explore vertices in topological order
-	std::vector<V> exploring;
+	std::deque<V> exploring;
 	topological_sort(g, std::front_inserter(exploring));
 
 	for (const V& u : exploring) {

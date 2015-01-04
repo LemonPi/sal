@@ -3,7 +3,7 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <vector>
-#define SENTINEL(T) (T{})
+#include "../algo/macros.h"	// SENTINEL
 
 namespace sal {
 
