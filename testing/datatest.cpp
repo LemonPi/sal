@@ -334,20 +334,20 @@ int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	// test_heap(print);
-	// test_tree(print);
-	// test_order_tree(print);
-	// test_interval_set(print);
-	// test_treap(print);
-	// test_list(print);
-	// test_undirected_graph(print);
-	// test_directed_graph(print);
-	// test_matrix(print);
-	// test_bfs(print);
-	// test_dfs(print);
-	// test_topological_sort(print);
-	// test_transpose(print);
-	// test_strongly_connected(print);
-	// test_mst(print);
+	test_heap(print);
+	test_tree(print);
+	test_order_tree(print);
+	test_interval_set(print);
+	test_treap(print);
+	test_list(print);
+	test_undirected_graph(print);
+	test_directed_graph(print);
+	test_matrix(print);
+	test_bfs(print);
+	test_dfs(print);
+	test_topological_sort(print);
+	test_transpose(print);
+	test_strongly_connected(print);
+	test_mst(print);
 	test_bellman_ford(print);
 }

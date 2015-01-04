@@ -1,5 +1,6 @@
 #pragma once
-#include "adjacency_list.h"
+#include "search.h"		// bfs visitor
+#include "utility.h"	// topological sort
 
 #ifndef POS_INF
 #define POS_INF(T) (std::numeric_limits<T>::max())
@@ -35,16 +36,19 @@ using SPM = Shortest_property_map<typename Graph::vertex_type, typename Graph::e
 
 
 struct Shortest_visitor : public BFS_visitor {
-	template <typename Property_map, typename Queue>
-	void relax(Property_map& property, Queue& exploring, 
+	// returns whether relaxed or not
+	template <typename Property_map>
+	bool relax(Property_map& property,
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
 		if (property[edge.dest()].distance > property[edge.source()].distance + edge.weight()) {
 			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
 			property[edge.dest()].parent = edge.source();
+			return true;
 		}
+		return false;
 	}
-	// default initialization of BFS visitor
+	// default initialization of BFS visitor (initialization single source)
 };
 
 
@@ -52,27 +56,53 @@ struct Shortest_visitor : public BFS_visitor {
 // O(VE) time, does O(V) relaxations on each vertex
 template <typename Graph, typename Visitor = Shortest_visitor>
 SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
-	using V = typename Graph::vertex_type;
-	using E = typename Graph::edge_type;
 	SPM<Graph> property;
-	std::vector<Edge<V,E>> exploring;
 	visitor.initialize_vertex(property, g, s);
 
-	// only need |V| - 1 passes since shortest path is always simple (cycles are banned)
-	for (size_t pass = 1; pass != g.num_vertex(); ++pass)
+	// need at most |V| - 1 passes since shortest path is always simple (cycles are banned)
+	bool changed {true};
+	while (changed) {
+		changed = false;
 		// iterate over all edges (u,v)
 		for (auto u = g.begin(); u != g.end(); ++u)
 			for (auto v = u.begin(); v != u.end(); ++v) {
-				Edge<V,E> edge {*u, v};
-				exploring.push_back(edge);
-				visitor.relax(property, exploring, edge);
+				if (visitor.relax(property, {*u, v})) changed = true;
 			}
+	}
 	// check if triangle inequality violated
-	for (const Edge<V,E>& edge : exploring) 
-		if (property[edge.dest()].distance > property[edge.source()].distance + edge.weight())
-			return {};	// -infinity cycle exists
+	for (auto u = g.begin(); u != g.end(); ++u)
+		for (auto v = u.begin(); v != u.end(); ++v) 
+			if (property[*v].distance > property[*u].distance + v.weight())
+				return {};	// -infinity cycle exists
 	return property;
 }
+
+
+
+// single source DAG shortest path in O(V+E) time
+// relax according to a topological sort of vertices
+// always well defined (can't have cycles)
+template <typename Graph, typename Visitor = Shortest_visitor>
+SPM<Graph> shorest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
+	using V = typename Graph::vertex_type;
+	SPM<Graph> property;
+	visitor.initialize_vertex(property, g, s);
+
+	// explore vertices in topological order
+	std::vector<V> exploring;
+	topological_sort(g, std::front_inserter(exploring));
+
+	for (const V& u : exploring) {
+		auto edge = g.adjacent(u);
+		for (auto v = edge.first; v != edge.second; ++v)
+			visitor.relax(property, {u, v});
+	}
+
+	return property;
+}
+
+
+
 
 
 // at most |V| distinct vertices and |V| - 1 edges

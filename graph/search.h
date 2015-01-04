@@ -65,7 +65,7 @@ using DPM = DFS_property_map<typename Graph::vertex_type>;
 
 struct BFS_visitor {
 	template <typename Property_map, typename Queue>
-	void relax(Property_map& property, Queue& exploring, 
+	bool relax(Property_map& property, Queue& exploring, 
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
 		using E = typename Property_map::mapped_type::edge_type;
@@ -74,7 +74,9 @@ struct BFS_visitor {
 			property[edge.dest()].distance = property[edge.source()].distance + 1;
 			property[edge.dest()].parent = edge.source();
 			exploring.push(edge.dest());
+			return true;
 		}
+		return false;
 	}
 	// BFS doesn't load a queue to explore, start at source, so return void
 	template <typename Property_map, typename Graph>
