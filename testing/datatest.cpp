@@ -339,27 +339,30 @@ void test_shortest_dag(bool print) {
 	if (topo_shortest['r'].distance != POS_INF(int) || topo_shortest['s'].distance != 0 || topo_shortest['t'].distance != 2 ||
 		topo_shortest['x'].distance != 6 || topo_shortest['y'].distance != 5 || topo_shortest['z'].distance != 3)
 		PRINTLINE("FAILED...DAG shortest path");
+
+	auto topo_critical = sal::critical_dag(g, 'r');
+	if (print) for (char v : g) PRINTLINE(v << " <- " << topo_critical[v].parent << '\t' << topo_critical[v].distance);
 }
 
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	test_heap(print);
-	test_tree(print);
-	test_order_tree(print);
-	test_interval_set(print);
-	test_treap(print);
-	test_list(print);
-	test_undirected_graph(print);
-	test_directed_graph(print);
-	test_matrix(print);
-	test_bfs(print);
-	test_dfs(print);
-	test_topological_sort(print);
-	test_transpose(print);
-	test_strongly_connected(print);
-	test_mst(print);
-	test_bellman_ford(print);
+	// test_heap(print);
+	// test_tree(print);
+	// test_order_tree(print);
+	// test_interval_set(print);
+	// test_treap(print);
+	// test_list(print);
+	// test_undirected_graph(print);
+	// test_directed_graph(print);
+	// test_matrix(print);
+	// test_bfs(print);
+	// test_dfs(print);
+	// test_topological_sort(print);
+	// test_transpose(print);
+	// test_strongly_connected(print);
+	// test_mst(print);
+	// test_bellman_ford(print);
 	test_shortest_dag(print);
 }

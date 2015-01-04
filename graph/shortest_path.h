@@ -14,7 +14,6 @@
 
 namespace sal {
 
-
 // property map vertices need parent to backtrace to source
 // these algorithms are like BFS, except with weighted edges
 template <typename V, typename E>
@@ -80,6 +79,7 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 // single source DAG shortest path in O(V+E) time
 // relax according to a topological sort of vertices
 // always well defined (can't have cycles)
+// can be used to find longest path (critical path) by negating all weights
 template <typename Graph, typename Visitor = Shortest_visitor>
 SPM<Graph> shortest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
 	using V = typename Graph::vertex_type;
@@ -95,10 +95,17 @@ SPM<Graph> shortest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&&
 		for (auto v = edge.first; v != edge.second; ++v)
 			visitor.relax(property, {u, v});
 	}
-
 	return property;
 }
-
+// simpler if the graph can be modified
+template <typename Graph, typename Visitor = Shortest_visitor>
+SPM<Graph> critical_dag(Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
+	// negate each edge and run shortest dag
+	for (auto u = g.begin(); u != g.end(); ++u)
+		for (auto v = u.begin(); v != u.end(); ++v)
+			v.weight() = -v.weight();
+	return shortest_dag(g, s, visitor);
+}
 
 
 
