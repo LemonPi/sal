@@ -1,14 +1,17 @@
 #pragma once
 #include <queue>
-#include <stack>
 #include <unordered_map>
 #include <limits>
 #include "adjacency_list.h"
-#define IS_WHITE(x) (property[x].start == unsigned_infinity)
+
+#ifndef POS_INF
+#define POS_INF(T) (std::numeric_limits<T>::max())
+#endif
+#define IS_WHITE(x) (property[x].start == POS_INF(decltype(property[x].start)))
 #define IS_GREY(x) (property[x].finish == 0)
 
 namespace sal {
-constexpr size_t unsigned_infinity {std::numeric_limits<size_t>::max()};
+
 
 /* algorithms expects Graph to have: 
 	vertex iterators in begin() and end() (and reverse iterators in rbegin(), rend())
@@ -21,16 +24,6 @@ constexpr size_t unsigned_infinity {std::numeric_limits<size_t>::max()};
   		weight() gives weight of edge to destination vertex
 */
 
-template <typename V, typename E>
-struct Edge {
-	V u, v;
-	E w;
-	template <typename Adj_iter>
-	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w(b.weight()) {}
-	V source() const   {return u;}
-	V dest() const     {return v;}
-	E weight() const   {return w;}
-};
 
 template <typename V>
 struct BFS_vertex {
@@ -45,6 +38,7 @@ struct BFS_vertex {
 
 template <typename V>
 struct DFS_vertex {
+	using edge_type = size_t;
 	// time stamps
 	// discovery and finish time, from 1 to |V|
 	size_t start;
@@ -74,17 +68,21 @@ struct BFS_visitor {
 	void relax(Property_map& property, Queue& exploring, 
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
-		if (property[edge.dest()].distance == unsigned_infinity) {
+		using E = typename Property_map::mapped_type::edge_type;
+		// if not visited, relax edge (doesn't care about weight)
+		if (property[edge.dest()].distance == POS_INF(E)) {
 			property[edge.dest()].distance = property[edge.source()].distance + 1;
 			property[edge.dest()].parent = edge.source();
 			exploring.push(edge.dest());
 		}
 	}
-	// BFS doesn't load a queue to explore, start at root, so return void
+	// BFS doesn't load a queue to explore, start at source, so return void
 	template <typename Property_map, typename Graph>
-	void initialize_vertex(Property_map& property, const Graph& g) {
+	void initialize_vertex(Property_map& property, const Graph& g, typename Graph::vertex_type s) {
+		using E = typename Property_map::mapped_type::edge_type;
 		for (auto v = g.rbegin(); v != g.rend(); ++v) 
-			property[*v] = {unsigned_infinity, *v};
+			property[*v] = {POS_INF(E), *v};
+		property[s].distance = 0;
 	}	
 };
 
@@ -92,7 +90,7 @@ template <typename Graph, typename Visitor = BFS_visitor>
 BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = BFS_visitor{}) {
 	using V = typename Graph::vertex_type;
 	BPM<Graph> property;
-	visitor.initialize_vertex(property, g);
+	visitor.initialize_vertex(property, g, s);
 
 	property[s].distance = 0;
 	property[s].parent = s;
@@ -117,10 +115,11 @@ BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor 
 struct DFS_visitor {
 	template <typename Property_map, typename Graph>
 	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
+		using E = typename Property_map::mapped_type::edge_type;
 		std::vector<typename Graph::vertex_type> exploring;
 		for (auto v = g.rbegin(); v != g.rend(); ++v) {
 			// mark unexplored
-			property[*v] = {unsigned_infinity, 0, *v};
+			property[*v] = {POS_INF(E), 0, *v};
 			// expore every vertex
 			exploring.push_back(*v);
 		}
@@ -146,8 +145,9 @@ struct Graph_single_visitor : public DFS_visitor {
 	Graph_single_visitor(V s) : source{s} {}
 	template <typename Property_map>
 	std::vector<V> initialize_vertex(Property_map& property, const Graph& g) {
+		using E = typename Property_map::mapped_type::edge_type;
 		for (auto v = g.rbegin(); v != g.rend(); ++v)
-			property[*v] = {unsigned_infinity, 0, *v};
+			property[*v] = {POS_INF(E), 0, *v};
 		return {source};
 	}
 };
@@ -227,7 +227,7 @@ DPM<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& 
 	DPM<Graph> property;
 	// no need to reverse traverse now
 	for (auto v = g.begin(); v != g.end(); ++v)
-		property[*v] = {unsigned_infinity, 0, *v};
+		property[*v] = {POS_INF(size_t), 0, *v};
 
 	size_t explore_time {0};
 

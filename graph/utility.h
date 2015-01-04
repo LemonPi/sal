@@ -1,11 +1,16 @@
 #pragma once
 #include <deque>
-#include <vector>
+#include <limits>
 #include <map>
 #include <set>
 #include <unordered_set>
-#include "search.h"
+#include <vector>
+#include "search.h"		// dfs used in many algorithms
 #include "../heap.h"	// used for piority queue
+// so you don't have to find it somewhere else
+#ifndef POS_INF
+#define POS_INF(T) (std::numeric_limits<T>::max())
+#endif
 
 namespace sal {
 // for directed acyclic graph (dag)
@@ -82,8 +87,9 @@ struct Connected_visitor : public DFS_visitor {
 	// visit in order of descending finish time 
 	template <typename Property_map>
 	std::vector<V> initialize_vertex(Property_map& property, const Graph& g) {
+		using E = typename Property_map::mapped_type::edge_type;
 		for (auto v : finish_order) 
-			property[v] = {unsigned_infinity, 0, v};
+			property[v] = {POS_INF(E), 0, v};
 
 		return std::move(finish_order);
 	}
@@ -123,7 +129,7 @@ struct Prim_vertex {
 	V parent;
 	E min_edge;
 	Prim_vertex() = default;
-	Prim_vertex(V v) : parent{v}, min_edge{std::numeric_limits<E>::max()} {}
+	Prim_vertex(V v) : parent{v}, min_edge{POS_INF(E)} {}
 	E edge() const {return min_edge;}
 };
 template <typename Property_map>
@@ -144,23 +150,23 @@ using MPM = std::map<typename Graph::vertex_type, Prim_vertex<typename Graph::ve
 struct MST_visitor : public BFS_visitor {
 	// relaxes an edge if it meets certain requirements
 	template <typename Property_map, typename Queue>
-	void relax(Property_map& property, Queue& queue, 
+	void relax(Property_map& property, Queue& exploring, 
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
 		// const Edge<typename Property_map::key_type>& edge, Op addition = []{}) {
-		size_t d_i {queue.key(edge.dest())};
-		// d_i == 0 means not in queue
+		size_t d_i {exploring.key(edge.dest())};
+		// d_i == 0 means not in exploring
 		if (d_i && edge.weight() < property[edge.dest()].min_edge) {
 			property[edge.dest()].min_edge = edge.weight();
 			property[edge.dest()].parent = edge.source();
 			// fix heap property
-			queue.check_key(d_i);
+			exploring.check_key(d_i);
 		}		
 	}
 
 };
 
-// can be made faster to O(E) time if edge weights are integers using an array as the queue
+// can be made faster to O(E) time if edge weights are integers using an array as the exploring
 // with each slot holding doubly linked list of vertices with that min_edge
 template <typename Graph>
 MPM<Graph> min_span_tree(const Graph& g) {
@@ -172,7 +178,7 @@ MPM<Graph> min_span_tree(const Graph& g) {
 	MPM<Graph> property;
 	// comparator querying on min_edge
 	Cmp cmp {property};
-	Heap<V, Cmp> queue {cmp};
+	Heap<V, Cmp> exploring {cmp};
 
 	for (V v : g) property[v] = Prim_vertex<V,E>{v};
 	// let root of MST be the smallest vertex by name
@@ -180,15 +186,15 @@ MPM<Graph> min_span_tree(const Graph& g) {
 	property[root].min_edge = 0;
 
 	// batch insert is O(n) rather than O(nlgn) of inserting each sequentially
-	queue.batch_insert(g.begin(), g.end());
+	exploring.batch_insert(g.begin(), g.end());
 
-	while (!queue.empty()) {
-		V u {queue.extract_top()};
+	while (!exploring.empty()) {
+		V u {exploring.extract_top()};
 		// for each adjacent vertex
 		auto edges = g.adjacent(u);
 		for (auto v = edges.first; v != edges.second; ++v) {
 			// relaxation
-			visitor.relax(property, queue, {u, v});
+			visitor.relax(property, exploring, {u, v});
 		}
 	}
 	return property;

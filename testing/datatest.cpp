@@ -10,6 +10,7 @@
 #include "../graph.h"
 #include "../graph/search.h"
 #include "../graph/utility.h"
+#include "../graph/shortest_path.h"
 
 using namespace std;
 
@@ -320,23 +321,33 @@ void test_matrix(bool print) {
 	test_pow(print);
 }
 
+void test_bellman_ford(bool print) {
+	sal::digraph<char> g {{'s','t',6},{'s','y',7},{'t','y',8},{'t','x',5},{'t','z',-4},
+						{'x','t',-2},{'y','x',-3},{'y','z',9},{'z','s',2},{'z','x',7}};
+
+	auto shortest_path = sal::bellman_ford(g, 's');
+	if (print) for (char v : g) PRINTLINE(v << " <- " << shortest_path[v].parent << '\t' << shortest_path[v].distance);
+	if (shortest_path.empty()) PRINTLINE("FAILED...Bellman ford shortest path");
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	test_heap(print);
-	test_tree(print);
-	test_order_tree(print);
-	test_interval_set(print);
-	test_treap(print);
-	test_list(print);
-	test_undirected_graph(print);
-	test_directed_graph(print);
-	test_matrix(print);
-	test_bfs(print);
-	test_dfs(print);
-	test_topological_sort(print);
-	test_transpose(print);
-	test_strongly_connected(print);
-	test_mst(print);
+	// test_heap(print);
+	// test_tree(print);
+	// test_order_tree(print);
+	// test_interval_set(print);
+	// test_treap(print);
+	// test_list(print);
+	// test_undirected_graph(print);
+	// test_directed_graph(print);
+	// test_matrix(print);
+	// test_bfs(print);
+	// test_dfs(print);
+	// test_topological_sort(print);
+	// test_transpose(print);
+	// test_strongly_connected(print);
+	// test_mst(print);
+	test_bellman_ford(print);
 }

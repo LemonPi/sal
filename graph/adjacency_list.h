@@ -2,11 +2,23 @@
 #include <iostream>
 #include <initializer_list>
 #include <map>
-#include <set>
 
 namespace sal {
 
+// edge used in algorithms
+template <typename V, typename E>
+struct Edge {
+	using edge_type = E;
+	V u, v;
+	E w;
+	template <typename Adj_iter>
+	Edge(V a, Adj_iter& b) : u{a}, v{*b}, w(b.weight()) {}
+	V source() const   {return u;}
+	V dest() const     {return v;}
+	E weight() const   {return w;}
+};
 
+// helper edges for constructing graphs
 template <typename V, typename E = int>
 struct WEdge {
 	V source;
