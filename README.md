@@ -108,11 +108,11 @@ Data structures
 
 ###### [sal/data/heap.h --- binary heap](#heap)
 - maxheap by default
-- Ө(1) time search
-- Ө(n) time construction and batch insert
-- Ө(lgn) time insert 
-- Ө(lgn) time extract top
-- Ө(lgn) time change key (check key if value was indirectly changed)
+- `Ө(1)` time search
+- `Ө(n)` time construction and batch insert
+- `Ө(lgn)` time insert 
+- `Ө(lgn)` time extract top
+- `Ө(lgn)` time change key (check key if value was indirectly changed)
 
 ###### [sal/data/matrix.h --- 2D matrix](#matrix)
 - square identities
@@ -130,6 +130,9 @@ Data structures
 - order statistic tree
 
 ###### [sal/data/interval.h --- interval tree](#interval)
+- overlapping regions or time intervals
+- collision resolution
+- scheduling
 
 ###### [sal/data/graph.h --- directed and undirected graphs](#graph)
 - adjacency matrix (not really supported)
@@ -138,17 +141,24 @@ Data structures
 - adjacency iterator
 
 ###### [sal/data/graph/search.h --- graph searches](#graph_search)
-- breadth first search
-- depth first search
-- recursive depth first search
+- `Ө(V + E)` breadth first search
+- `Ө(V + E)` depth first search
+- `Ө(V + E)` recursive depth first search
 - visitors for custom actions at certain points of DFS
 
 ###### [sal/data/graph/utility.h --- important graph algorithms](#graph_utility)
-- topological sort
-- check for cycle
-- transpose of graph
-- strongly connected components
-- minimum spanning tree
+- `Ө(V + E)` topological sort
+- `Ө(V + E)` check for cycle
+- `Ө(V + E)` transpose of graph
+- `Ө(V + E)` strongly connected components
+- `O((V + E)lgV)` minimum spanning tree
+
+###### [sal/data/graph/shortest.h --- shortest paths for different graphs or trees](#shortest)
+- single source algorithms:
+- `O(VE)` Bellman-Ford (allows negative edges)
+- `O(V + E)` shortest dag (directed acyclic graph)
+- `O((V + E)lgV)` Dijkstra (non-negative edges)
+
 
 Example usage
 ===
@@ -1067,10 +1077,10 @@ for (const auto& bloc: mutual_partners) {
 	cout << '\t';
 }
 // USA China Canada      EU Brazil      Russia France   	Australia
-```
+
 
 // minimum spanning tree -------------
-```C++
+
 // for a connected, undirected graph with positive edge weights
 // find the cheapest way to connect all the vertices
 // ex. connecting nodes on a circuit board
@@ -1085,6 +1095,53 @@ auto mst = sal::min_span_tree(salesman);
 
 
 // to actually create the tree, simply iterate over vertex and add edge between parent and child
-graph<char> min_circuit {mpm_to_tree(mst)};
+// pm_to_tree works on any property map and undirected graph
+graph<char> min_circuit {pm_to_tree(mst)};
+
+```
+
+###### sal/data/graph/shortest.h --- <a name="shortest">shortest path for different graphs and models</a>
+```C++
+// Single source shortest paths ------
+
+
+// Bellman-Ford ----------------------
+// most general and slowest of path finding algorithms
+// O(VE) time since it might have to backtrack
+// can find negative weight cycles, in which case it returns an empty property map
+digraph<char> g {{'s','t',6},{'s','y',7},{'t','y',8},{'t','x',5},{'t','z',-4},
+				{'x','t',-2},{'y','x',-3},{'y','z',9},{'z','s',2},{'z','x',7}};
+
+bellman_ford(g, 's');
+// property map with parent and distance attributes
+
+
+
+
+// Shortest dag ----------------------
+// special case where graph is directed and acyclical
+// O(V + E) time by topologically sorting the vertices and relaxing in that order
+// can have negative weight since acyclical, so never negative cycles
+digraph<char> g {{'r','s',5},{'r','t',3},{'s','t',2},{'s','x',6},{'t','x',7},
+				{'t','y',4},{'t','z',2},{'x','y',-1},{'x','z',1},{'y','z',-2}};
+
+shortest_dag(g, 's');
+// property map with parent and distance attributes
+
+
+
+
+// Dijkstra --------------------------
+// directed and non-negative weight
+// O((V + E)lgV) time implemented with binary heap priority queue
+digraph<char> g {{'s','t',10},{'s','y',5},{'t','y',2},{'t','x',1},{'x','z',4},{'y','t',3},
+				{'y','x',9},{'y','z',2},{'z','s',7},{'z','x',6}};
+
+dijkstra(g, 's');
+// property map with parent and distance attributes
+
+
+// remember to actually create tree, filter with pm_to_tree
+graph<char> shortest_g {pm_to_tree(mst)};
 
 ```
