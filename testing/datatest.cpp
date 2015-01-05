@@ -52,23 +52,21 @@ void test_heap(bool print) {
 	sal::Heap<std::string> h2o {"probably not POD", "another string", "is this actually string?"};
 	if (print) PRINTLINE(std::is_pod<std::string>::value);
 
-	using MPM = std::map<int, sal::Prim_vertex<int>>;
-	using Cmp = sal::Prim_cmp<MPM>;
+	using SPM = std::map<int, sal::Shortest_vertex<int>>;
+	using Cmp = sal::Shortest_cmp<SPM>;
 
-	MPM property;
+	SPM property;
 
 	// random testing value % 6
 	std::vector<int> order {3, 4, 6, 5, 1, 8, 11, 12};
-	for (int v : order) { property[v] = sal::Prim_vertex<int>{v}; property[v].min_edge = v % 6; }
+	for (int v : order) { property[v] = sal::Shortest_vertex<int>{v}; property[v].distance = v % 6; }
 
 	// create comparator
-	Cmp cmp {property};
-
-	sal::Heap<int, Cmp> h {cmp};
+	sal::Heap<int, Cmp> h {Cmp{property}};
 	
 	h.batch_insert(order.begin(), order.end());
 	 
-	property[6].min_edge = 10;
+	property[6].distance = 10;
 	h.check_key(h.key(6));
 
 
@@ -344,25 +342,35 @@ void test_shortest_dag(bool print) {
 	if (print) for (char v : g) PRINTLINE(v << " <- " << topo_critical[v].parent << '\t' << topo_critical[v].distance);
 }
 
+void test_dijkstra(bool print) {
+	sal::digraph<char> g {{'s','t',10},{'s','y',5},{'t','y',2},{'t','x',1},{'x','z',4},{'y','t',3},
+						{'y','x',9},{'y','z',2},{'z','s',7},{'z','x',6}};
+	auto non_neg_shortest = sal::dijkstra(g, 's');
+	if (print) for (char v : g) PRINTLINE(v << " <- " << non_neg_shortest[v].parent << '\t' << non_neg_shortest[v].distance);
+	if (non_neg_shortest['t'].distance != 8 || non_neg_shortest['x'].distance != 9 || non_neg_shortest['y'].distance != 5 || 
+		non_neg_shortest['z'].distance != 7) PRINTLINE("FAILED...Djikstra non-negative shortest path");
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	// test_heap(print);
-	// test_tree(print);
-	// test_order_tree(print);
-	// test_interval_set(print);
-	// test_treap(print);
-	// test_list(print);
-	// test_undirected_graph(print);
-	// test_directed_graph(print);
-	// test_matrix(print);
-	// test_bfs(print);
-	// test_dfs(print);
-	// test_topological_sort(print);
-	// test_transpose(print);
-	// test_strongly_connected(print);
-	// test_mst(print);
-	// test_bellman_ford(print);
+	test_heap(print);
+	test_tree(print);
+	test_order_tree(print);
+	test_interval_set(print);
+	test_treap(print);
+	test_list(print);
+	test_undirected_graph(print);
+	test_directed_graph(print);
+	test_matrix(print);
+	test_bfs(print);
+	test_dfs(print);
+	test_topological_sort(print);
+	test_transpose(print);
+	test_strongly_connected(print);
+	test_mst(print);
+	test_bellman_ford(print);
 	test_shortest_dag(print);
+	test_dijkstra(print);
 }
