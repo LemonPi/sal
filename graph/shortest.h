@@ -1,7 +1,7 @@
 #pragma once
 #include <deque>
-#include "search.h"		// bfs visitor
-#include "utility.h"	// topological sort
+#include "search.h"		// initialize single source
+#include "utility.h"	// topological sort, shortest path vertex, comparator, and visitor
 #include "../../algo/macros.h"
 // subset of graph searches, specifically searching for shortest paths
 // solves (1) single-source (2) single-destination (3) single pair (4) all pairs
@@ -14,47 +14,16 @@
 
 namespace sal {
 
-// property map vertices need parent to backtrace to source
+
 // these algorithms are like BFS, except with weighted edges
-template <typename V, typename E>
-struct Shortest_vertex {
-	using edge_type = E;
-	// distance estimate of s to vertex, always >= distance
-	// after completion, estimate is == distance
-	E distance;
-	V parent;
-	E edge() const {return distance;}
-};
-
-template <typename V, typename E>
-using Shortest_property_map = std::unordered_map<V, Shortest_vertex<V,E>>;
-template <typename Graph>
-using SPM = Shortest_property_map<typename Graph::vertex_type, typename Graph::edge_type>;
-
-
-struct Shortest_visitor : public BFS_visitor {
-	// returns whether relaxed or not
-	template <typename Property_map>
-	bool relax(Property_map& property,
-		const Edge<typename Property_map::key_type, 
-				   typename Property_map::mapped_type::edge_type>& edge) {
-		if (property[edge.dest()].distance > property[edge.source()].distance + edge.weight()) {
-			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
-			property[edge.dest()].parent = edge.source();
-			return true;
-		}
-		return false;
-	}
-	// default initialization of BFS visitor (initialization single source)
-};
-
+// start of single source shortest path -------------
 
 // single-source general edge weights, DP and is slower than others
 // O(VE) time, does O(V) relaxations on each vertex
 template <typename Graph, typename Visitor = Shortest_visitor>
 SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
 	SPM<Graph> property;
-	visitor.initialize_vertex(property, g, s);
+	initialize_single_source(property, g, s);
 
 	// need at most |V| - 1 passes since shortest path is always simple (cycles are banned)
 	bool changed {true};
@@ -84,7 +53,7 @@ template <typename Graph, typename Visitor = Shortest_visitor>
 SPM<Graph> shortest_dag(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
 	using V = typename Graph::vertex_type;
 	SPM<Graph> property;
-	visitor.initialize_vertex(property, g, s);
+	initialize_single_source(property, g, s);
 
 	// explore vertices in topological order
 	std::deque<V> exploring;
@@ -109,16 +78,44 @@ SPM<Graph> critical_dag(Graph& g, typename Graph::vertex_type s, Visitor&& visit
 
 
 
-
-// at most |V| distinct vertices and |V| - 1 edges
+// single source directed graph
 // assumes non-negative weighted edges, O((V+E)lgV) with binary heap (priority queue)
-template <typename Graph, typename Visitor = Shortest_visitor>
-size_t dijkstra(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
-	// using V = typename Graph::vertex_type;
-	// using E = typename Graph::edge_type;
+struct DJ_visitor {
+	// relaxes an edge if it meets certain requirements
+	template <typename Property_map, typename Queue>
+	void relax(Property_map& property, Queue& exploring, 
+		const Edge<typename Property_map::key_type, 
+				   typename Property_map::mapped_type::edge_type>& edge) {
+		size_t d_i {exploring.key(edge.dest())};
+		// d_i == 0 means not in exploring
+		if (d_i && edge.weight() < property[edge.dest()].distance + edge.weight()) {
+			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
+			property[edge.dest()].parent = edge.source();
+			// fix heap property
+			exploring.check_key(d_i);
+		}		
+	}
+};
+
+template <typename Graph>
+SPM<Graph> dijkstra(const Graph& g, typename Graph::vertex_type s, DJ_visitor&& visitor = {}) {
+	using V = typename Graph::vertex_type;
+	using Cmp = Shortest_cmp<SPM<Graph>>;
 	SPM<Graph> property;
-	visitor.initialize_vertex(property, g);
-	return 0;
+	initialize_single_source(property, g, s);
+
+	// comparator querying on distance
+	Heap<V, Cmp> exploring {Cmp{property}};
+	exploring.batch_insert(g.begin(), g.end());
+
+	while (!exploring.empty()) {
+		V u {exploring.extract_top()};
+		auto edges = g.adjacent(u);
+		for (auto v = edges.first; v != edges.second; ++v) 
+			visitor.relax(property, exploring, {u, v});
+	}
+
+	return property;
 }
 
 }	// end namespace sal

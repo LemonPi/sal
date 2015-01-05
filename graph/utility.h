@@ -5,7 +5,7 @@
 #include <set>
 #include <unordered_set>
 #include <vector>
-#include "search.h"		// dfs used in many algorithms
+#include "search.h"		// dfs used in many algorithms, single source initialization
 #include "../heap.h"	// used for piority queue
 #include "../../algo/macros.h"	// POS_INF
 
@@ -13,6 +13,7 @@ namespace sal {
 // for directed acyclic graph (dag)
 // orders all vertices so that parent vertices are always before children
 // if vertices are events, then sorting gives one possible sequence of events
+// O(V + E) algorithm (as are most algorithms using DFS)
 template <typename Output_iter>
 struct Topological_visitor : public DFS_visitor {
 	Output_iter out;
@@ -29,13 +30,13 @@ void topological_sort(const Graph& g, Output_iter res) {
 	dfs(g, Topological_visitor<Output_iter>{res});
 }
 
+
+
 struct Cycle_visitor : public DFS_visitor {
 	bool has_backedge {false};
 	template <typename Graph>
 	void back_edge(typename Graph::vertex_type, const Graph&) {has_backedge = true;}	
 };
-
-
 template <typename Graph>
 bool has_cycle(const Graph& g) {
 	Cycle_visitor visitor;
@@ -84,9 +85,8 @@ struct Connected_visitor : public DFS_visitor {
 	// visit in order of descending finish time 
 	template <typename Property_map>
 	std::vector<V> initialize_vertex(Property_map& property, const Graph& g) {
-		using E = typename Property_map::mapped_type::edge_type;
 		for (auto v : finish_order) 
-			property[v] = {POS_INF(E), 0, v};
+			property[v] = {v};
 
 		return std::move(finish_order);
 	}
@@ -118,72 +118,90 @@ Connected_set<Graph> strongly_connected(const Graph& g) {
 }
 
 
-// Prim's algorithm for minimum spanning tree
-// connected undirected graph, assuming positive weight
-template <typename V, typename E = size_t>
-struct Prim_vertex {
+// start of shortest path algorithms ------------- (their utilities)
+
+// each category of algorithms have a (1) property mapped vertex type
+// many algorithms of the same type will share the same (2) comparator
+// (3) visitors are the least shared among algorithms
+
+template <typename V, typename E = size_t>	// non-neg by default
+struct Shortest_vertex {
 	using edge_type = E;
+	// distance estimate of s to vertex, always >= distance
+	// after completion, estimate is == distance
 	V parent;
-	E min_edge;
-	Prim_vertex() = default;
-	Prim_vertex(V v) : parent{v}, min_edge{POS_INF(E)} {}
-	E edge() const {return min_edge;}
+	E distance;
+	Shortest_vertex() = default;
+	Shortest_vertex(const V& v) : parent{v}, distance{POS_INF(E)} {}
+	E edge() const {return distance;}
 };
 template <typename Property_map>
-struct Prim_cmp {
+struct Shortest_cmp {
 	using V = typename Property_map::key_type;
 	const Property_map& property;
-	Prim_cmp(const Property_map& p) : property(p) {}
+	Shortest_cmp(const Property_map& p) : property(p) {}
 
 	bool operator()(const V& u, const V& v) const {
-		return property.find(u)->second.min_edge < property.find(v)->second.min_edge; 
+		return (property.find(u)->second.distance) < (property.find(v)->second.distance); 
+	}
+};
+struct Shortest_visitor {
+	// returns whether relaxed or not
+	template <typename Property_map>
+	bool relax(Property_map& property,
+		const Edge<typename Property_map::key_type, 
+				   typename Property_map::mapped_type::edge_type>& edge) {
+		if (property[edge.dest()].distance > property[edge.source()].distance + edge.weight()) {
+			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
+			property[edge.dest()].parent = edge.source();
+			return true;
+		}
+		return false;
 	}
 };
 
-// MST property map
+template <typename V, typename E>
+using Shortest_property_map = std::unordered_map<V, Shortest_vertex<V,E>>;
 template <typename Graph>
-using MPM = std::map<typename Graph::vertex_type, Prim_vertex<typename Graph::vertex_type, typename Graph::edge_type>>;
+using SPM = Shortest_property_map<typename Graph::vertex_type, typename Graph::edge_type>;
 
-struct MST_visitor : public BFS_visitor {
+
+// Prim's algorithm for minimum spanning tree
+// connected undirected graph, assuming positive weight
+struct MST_visitor {
 	// relaxes an edge if it meets certain requirements
 	template <typename Property_map, typename Queue>
 	void relax(Property_map& property, Queue& exploring, 
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
-		// const Edge<typename Property_map::key_type>& edge, Op addition = []{}) {
+
 		size_t d_i {exploring.key(edge.dest())};
 		// d_i == 0 means not in exploring
-		if (d_i && edge.weight() < property[edge.dest()].min_edge) {
-			property[edge.dest()].min_edge = edge.weight();
+		// distance for MST means minimum edge weight connecting to it
+		if (d_i && edge.weight() < property[edge.dest()].distance) {
+			property[edge.dest()].distance = edge.weight();
 			property[edge.dest()].parent = edge.source();
 			// fix heap property
 			exploring.check_key(d_i);
 		}		
 	}
-
 };
 
 // can be made faster to O(E) time if edge weights are integers using an array as the exploring
-// with each slot holding doubly linked list of vertices with that min_edge
+// with each slot holding doubly linked list of vertices with that distance
 template <typename Graph>
-MPM<Graph> min_span_tree(const Graph& g) {
+SPM<Graph> min_span_tree(const Graph& g, MST_visitor&& visitor = {}) {
 	using V = typename Graph::vertex_type;
-	using E = typename Graph::edge_type;
-	using Cmp = Prim_cmp<MPM<Graph>>;
-	MST_visitor visitor;
-	// property map of each vertex to their min_edge
-	MPM<Graph> property;
-	// comparator querying on min_edge
-	Cmp cmp {property};
-	Heap<V, Cmp> exploring {cmp};
+	using Cmp = Shortest_cmp<SPM<Graph>>;
+	// property map of each vertex to their distance
+	SPM<Graph> property;
+	// comparator querying on distance
+	initialize_single_source(property, g, *g.begin());
 
-	for (V v : g) property[v] = Prim_vertex<V,E>{v};
-	// let root of MST be the smallest vertex by name
-	V root {*g.begin()};
-	property[root].min_edge = 0;
+	Heap<V, Cmp> exploring {Cmp{property}};
+	exploring.batch_insert(g.begin(), g.end());
 
 	// batch insert is O(n) rather than O(nlgn) of inserting each sequentially
-	exploring.batch_insert(g.begin(), g.end());
 
 	while (!exploring.empty()) {
 		V u {exploring.extract_top()};
@@ -208,6 +226,31 @@ graph<typename Property_map::key_type> pm_to_tree(const Property_map& property) 
 		if (edge.first == edge.second.parent) g_mst.add_vertex(edge.first);
 		else g_mst.add_edge(edge.first, edge.second.parent, edge.second.edge());
 	return g_mst;
+}
+
+
+// check if property map produces shortest tree of a graph on source s
+template <typename Property_map, typename Graph>
+bool is_shortest(Property_map& property, 
+				 const Graph& g, 
+				 const typename Graph::vertex_type& s) {
+	using V = typename Graph::vertex_type;
+	using E = typename Graph::edge_type;
+	if (property[s].distance != 0) return false;
+	// for every edge, triangle inequality has to be satisfied
+	// d(v) <= d(u) + w(u,v)
+	Property_map test;
+	for (const V& u : g) 
+		if (property[u].parent == u) test[u].distance = POS_INF(E);
+		// distance of parent + weight of edge getting from parent to child
+		else test[u].distance = property[property[u].parent].distance + g.weight(property[u].parent, u);
+	test[s].distance = 0;
+
+	for (auto u = g.begin(); u != g.end(); ++u) 
+		for (auto v = u.begin(); v != u.end(); ++v) 
+			if (test[*u].distance + v.weight() < test[*v].distance) return false;
+		
+	return true;
 }
 
 }

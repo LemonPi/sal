@@ -26,22 +26,26 @@ namespace sal {
 template <typename V>
 struct BFS_vertex {
 	using edge_type = size_t;
-	// distance estimate of s to vertex, always >= distance
-	// after completion, estimate is == distance
-	size_t distance;
 	// flattened tree to trace back path, unnecessary if only path weight needed
 	V parent;
+	// after completion, estimate is == distance
+	// distance estimate of s to vertex, always >= distance
+	size_t distance;
+	BFS_vertex() = default;
+	BFS_vertex(const V& v) : parent{v}, distance{POS_INF(edge_type)} {}
 	size_t edge() const {return 1;}
 };
 
 template <typename V>
 struct DFS_vertex {
 	using edge_type = size_t;
+	V parent;
 	// time stamps
 	// discovery and finish time, from 1 to |V|
 	size_t start;
 	size_t finish;
-	V parent;
+	DFS_vertex() = default;
+	DFS_vertex(const V& v) : parent{v}, start{POS_INF(edge_type)}, finish{0} {}
 	size_t edge() const {return 1;}
 };
 
@@ -61,6 +65,15 @@ using DPM = DFS_property_map<typename Graph::vertex_type>;
 // O(V + E) time
 // creates a vertex property map relative to source (breadth first tree)
 
+
+// common initialization shared by most single-source algorithms (BFS, Bellman-Ford, Djikstra, shortest DAG) 
+template <typename Property_map, typename Graph>
+void initialize_single_source(Property_map& property, const Graph& g, typename Graph::vertex_type s) {
+	for (auto v = g.rbegin(); v != g.rend(); ++v) 
+		property[*v] = {*v};	// parent is itself
+	property[s].distance = 0;
+}	
+
 struct BFS_visitor {
 	template <typename Property_map, typename Queue>
 	bool relax(Property_map& property, Queue& exploring, 
@@ -76,21 +89,13 @@ struct BFS_visitor {
 		}
 		return false;
 	}
-	// BFS doesn't load a queue to explore, start at source, so return void
-	template <typename Property_map, typename Graph>
-	void initialize_vertex(Property_map& property, const Graph& g, typename Graph::vertex_type s) {
-		using E = typename Property_map::mapped_type::edge_type;
-		for (auto v = g.rbegin(); v != g.rend(); ++v) 
-			property[*v] = {POS_INF(E), *v};
-		property[s].distance = 0;
-	}	
 };
 
 template <typename Graph, typename Visitor = BFS_visitor>
 BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = BFS_visitor{}) {
 	using V = typename Graph::vertex_type;
 	BPM<Graph> property;
-	visitor.initialize_vertex(property, g, s);
+	initialize_single_source(property, g, s);
 
 	property[s].distance = 0;
 	property[s].parent = s;
@@ -115,11 +120,10 @@ BPM<Graph> bfs(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor 
 struct DFS_visitor {
 	template <typename Property_map, typename Graph>
 	std::vector<typename Graph::vertex_type> initialize_vertex(Property_map& property, const Graph& g) {
-		using E = typename Property_map::mapped_type::edge_type;
 		std::vector<typename Graph::vertex_type> exploring;
 		for (auto v = g.rbegin(); v != g.rend(); ++v) {
 			// mark unexplored
-			property[*v] = {POS_INF(E), 0, *v};
+			property[*v] = {*v};
 			// expore every vertex
 			exploring.push_back(*v);
 		}
@@ -145,9 +149,8 @@ struct Graph_single_visitor : public DFS_visitor {
 	Graph_single_visitor(V s) : source{s} {}
 	template <typename Property_map>
 	std::vector<V> initialize_vertex(Property_map& property, const Graph& g) {
-		using E = typename Property_map::mapped_type::edge_type;
 		for (auto v = g.rbegin(); v != g.rend(); ++v)
-			property[*v] = {POS_INF(E), 0, *v};
+			property[*v] = {*v};
 		return {source};
 	}
 };
@@ -194,7 +197,7 @@ DPM<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 		}
 	}
 
-	return std::move(property);
+	return property;
 }
 // overload for specifying a source, can't use other visitors
 template <typename Graph>
@@ -227,7 +230,7 @@ DPM<Graph> dfs_recurse(const Graph& g, typename Graph::vertex_type u, Visitor&& 
 	DPM<Graph> property;
 	// no need to reverse traverse now
 	for (auto v = g.begin(); v != g.end(); ++v)
-		property[*v] = {POS_INF(size_t), 0, *v};
+		property[*v] = {*v};
 
 	size_t explore_time {0};
 

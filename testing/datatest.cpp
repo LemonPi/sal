@@ -11,7 +11,7 @@
 #include "../graph.h"
 #include "../graph/search.h"
 #include "../graph/utility.h"
-#include "../graph/shortest_path.h"
+#include "../graph/shortest.h"
 
 using namespace std;
 
@@ -349,6 +349,8 @@ void test_dijkstra(bool print) {
 	if (print) for (char v : g) PRINTLINE(v << " <- " << non_neg_shortest[v].parent << '\t' << non_neg_shortest[v].distance);
 	if (non_neg_shortest['t'].distance != 8 || non_neg_shortest['x'].distance != 9 || non_neg_shortest['y'].distance != 5 || 
 		non_neg_shortest['z'].distance != 7) PRINTLINE("FAILED...Djikstra non-negative shortest path");
+
+	if (!sal::is_shortest(non_neg_shortest, g, 's')) PRINTLINE("FAILED...Djikstra non-negative shortest path");
 }
 
 int main(int argc, char** argv) {
@@ -373,4 +375,5 @@ int main(int argc, char** argv) {
 	test_bellman_ford(print);
 	test_shortest_dag(print);
 	test_dijkstra(print);
+
 }

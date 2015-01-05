@@ -8,14 +8,14 @@
 namespace sal {
 
 // differentiate the implementation based on whether data is simple
-template <typename T, typename Cmp = std::greater<T>, bool ispod = false>
-struct Heap_impl {};
+template <typename T, typename Cmp = std::greater<T>, bool ispod = std::is_pod<T>::value>
+struct Heap;
 
 // simple, plain old data implementation can work with copies of it
 // swapping should be cheap and there shouldn't be ownership issues
 // by default maxheap where parent greater than children
 template <typename T, typename Cmp>
-class Heap_impl<T, Cmp, true> {	
+class Heap<T, Cmp, true> {	
 	// default representation is as a vector, index at 1 so need 1 extra element
 	std::vector<T> elems;
 	// associate each key with an index
@@ -57,15 +57,15 @@ public:
 
 	// construction ------------
 	// O(n) time construction via these constructors (would be O(nlgn) for repeated inserts)
-	Heap_impl(Cmp& c) : elems{T{}}, cmp(c) {}
-	Heap_impl(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
+	Heap(Cmp&& c) : elems{T{}}, cmp(c) {}
+	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(l.size()+1);
 		elems.push_back(SENTINEL(T));
 		for (const T& v : l) {index[v] = elems.size(); elems.push_back(v);}
 		build_heap();
 	}
 	template <typename Iter>
-	Heap_impl(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
+	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(end - begin + 1);
 		elems.push_back(SENTINEL(T));
 		while (begin != end) {index[*begin] = elems.size(); elems.push_back(*begin); ++begin;}
@@ -186,7 +186,7 @@ struct Heap_const_iterator {
 // for non-PODs, hold pointers to only 1 copy of data
 // pointers are relatively small and easily swappable
 template <typename T, typename Cmp>
-class Heap_impl<T, Cmp, false>{	
+class Heap<T, Cmp, false>{	
 	// in case raw pointer gets swapped out for std::shared_ptr
 	using TP = T*;
 	// hash on the data pointed to
@@ -248,21 +248,21 @@ public:
 
 	// construction ------------
 	// O(n) time construction via these constructors (would be O(nlgn) for repeated inserts)
-	Heap_impl(Cmp& c) : elems{nullptr}, cmp(c) {}
-	Heap_impl(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
+	Heap(Cmp& c) : elems{nullptr}, cmp(c) {}
+	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(l.size()+1);
 		elems.push_back(nullptr);
 		for (const T& v : l) push_back(v);
 		build_heap();
 	}
 	template <typename Iter>
-	Heap_impl(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
+	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(end - begin + 1);
 		elems.push_back(nullptr);
 		while (begin != end) {push_back(*begin); ++begin;}
 		build_heap();
 	}
-	~Heap_impl() {for (TP p : elems) delete p;}
+	~Heap() {for (TP p : elems) delete p;}
 
 	// query ---------------
 	bool empty() const 	{return elems.size() <= 1;}
@@ -353,10 +353,6 @@ public:
 		return true;
 	}
 };
-
-
-template <typename T, typename Cmp = std::greater<T>>
-using Heap = Heap_impl<T, Cmp, std::is_pod<T>::value>;
 
 }
 

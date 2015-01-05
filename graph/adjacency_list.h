@@ -88,6 +88,8 @@ struct Vertex_iterator {
 	void operator--() {--cur;}
 	Vertex_iterator operator++(int) {return {cur++};}
 	Vertex_iterator operator--(int) {return {cur--};}
+	CR operator+(int scalar) const {return {cur + scalar};}
+	CR operator-(int scalar) const {return {cur - scalar};}
 	V& operator*() {return cur->first;}
 	Iter& operator->() {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
@@ -112,6 +114,8 @@ struct Vertex_const_iterator {
 	void operator--() {--cur;}
 	Vertex_const_iterator operator++(int) {return {cur++};}
 	Vertex_const_iterator operator--(int) {return {cur--};}
+	CR operator+(int scalar) const {return {cur + scalar};}
+	CR operator-(int scalar) const {return {cur - scalar};}
 	V operator*() const {return cur->first;}
 	const Iter& operator->() const {return cur;}
 	bool operator==(CR other) {return other.cur == cur;}
