@@ -238,6 +238,10 @@ public:
 		if (adj.empty()) return {};	// default
 		return adj.begin()->first;
 	}
+	V max_vertex() const {
+		if (adj.empty()) return {};
+		return adj.rbegin()->first;
+	}
 
 	// modifier interface
 	void add_vertex(V v) {adj[v];}

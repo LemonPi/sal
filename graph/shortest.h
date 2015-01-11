@@ -20,6 +20,7 @@ namespace sal {
 
 // single-source general edge weights, DP and is slower than others
 // O(VE) time, does O(V) relaxations on each vertex
+// applicable in many other algorithms, such as for solving difference constraints
 template <typename Graph, typename Visitor = Shortest_visitor>
 SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&& visitor = Shortest_visitor{}) {
 	SPM<Graph> property;
@@ -31,9 +32,8 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 		changed = false;
 		// iterate over all edges (u,v)
 		for (auto u = g.begin(); u != g.end(); ++u)
-			for (auto v = u.begin(); v != u.end(); ++v) {
+			for (auto v = u.begin(); v != u.end(); ++v) 
 				if (visitor.relax(property, {*u, v})) changed = true;
-			}
 	}
 	// check if triangle inequality violated
 	for (auto u = g.begin(); u != g.end(); ++u)

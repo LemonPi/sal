@@ -12,6 +12,7 @@
 #include "../graph/search.h"
 #include "../graph/utility.h"
 #include "../graph/shortest.h"
+#include "../graph/linear.h"
 
 using namespace std;
 
@@ -327,6 +328,7 @@ void test_bellman_ford(bool print) {
 	auto shortest_path = sal::bellman_ford(g, 's');
 	if (print) for (char v : g) PRINTLINE(v << " <- " << shortest_path[v].parent << '\t' << shortest_path[v].distance);
 	if (shortest_path.empty()) PRINTLINE("FAILED...Bellman ford shortest path");
+	if (!sal::is_shortest(shortest_path, g, 's')) PRINTLINE("FAILED...Bellman ford shortest path");
 }
 
 void test_shortest_dag(bool print) {
@@ -337,6 +339,7 @@ void test_shortest_dag(bool print) {
 	if (topo_shortest['r'].distance != POS_INF(int) || topo_shortest['s'].distance != 0 || topo_shortest['t'].distance != 2 ||
 		topo_shortest['x'].distance != 6 || topo_shortest['y'].distance != 5 || topo_shortest['z'].distance != 3)
 		PRINTLINE("FAILED...DAG shortest path");
+	if (!sal::is_shortest(topo_shortest, g, 's')) PRINTLINE("FAILED...DAG shortest path");
 
 	auto topo_critical = sal::critical_dag(g, 'r');
 	if (print) for (char v : g) PRINTLINE(v << " <- " << topo_critical[v].parent << '\t' << topo_critical[v].distance);
@@ -351,6 +354,17 @@ void test_dijkstra(bool print) {
 		non_neg_shortest['z'].distance != 7) PRINTLINE("FAILED...Djikstra non-negative shortest path");
 
 	if (!sal::is_shortest(non_neg_shortest, g, 's')) PRINTLINE("FAILED...Djikstra non-negative shortest path");
+}
+
+void test_difference_constraint(bool print) {
+	// solution size is # of cols for constraint matrix A
+	sal::Constraint_sys<int> system {{1,2,0},{1,5,-1},{2,5,1},{3,1,5},{4,1,4},{4,3,-1},
+									{5,3,-3},{5,4,-3}};
+	sal::Constraint_sol<int> solution {sal::feasible(system, 5)};
+	if (print) sal::print(solution);
+	for (auto constraint : system) 
+		if (solution[constraint.j-1] - solution[constraint.i-1] > constraint.limit) 
+			PRINTLINE("FAILED...Difference constraint feasibility with Bellman-Ford");
 }
 
 int main(int argc, char** argv) {
@@ -375,5 +389,5 @@ int main(int argc, char** argv) {
 	test_bellman_ford(print);
 	test_shortest_dag(print);
 	test_dijkstra(print);
-
+	test_difference_constraint(print);
 }
