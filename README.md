@@ -159,6 +159,8 @@ Data structures
 - `O(V + E)` shortest dag (directed acyclic graph)
 - `O((V + E)lgV)` Dijkstra (non-negative edges)
 
+###### [sal/data/graph/linear.h --- linear programming](#linear)
+- `O(mn)` Difference constraint feasibility (m <- # constraints, n <- # variables)
 
 Example usage
 ===
@@ -1145,3 +1147,35 @@ dijkstra(g, 's');
 graph<char> shortest_g {pm_to_tree(mst)};
 
 ```
+
+###### sal/data/graph/linear.h --- <a name="linear">linear programming</a>
+// optimizing solutions to a system under certain constraints
+// mathematically: Ax <= b
+// A <- m x n system
+// x <- n x 1 solution
+// b <- m x 1 constraints
+
+
+// difference constraints is a specific case of linear programming
+// each limit is a difference of 2 variables
+// aka each row of A has one 1 and -1, the rest being 0
+// resolves into xj - xi <= bk
+
+
+// create system ---------------
+Constraint_sys<int> system {{1,2,0},{1,5,-1},{2,5,1},{3,1,5},{4,1,4},{4,3,-1},
+									{5,3,-3},{5,4,-3}};
+// set of constraints, ex. x1 - x2 <= 0 for the first constraint
+
+
+// feasibility problem: does any x exist?
+// feasible(system, n <- # of variables)
+Constraint_sol<int> solution = feasible(system, 5);
+// vector<limit type> -5 -3 0 -1 -4
+// so x1 is -5, x2 is -3, ..
+
+
+solution.empty();
+// false (true if system of constraints is unfeasible)
+
+// sum of solution and their spread is minimized
