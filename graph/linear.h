@@ -41,6 +41,7 @@ Constraint_sol<T> feasible(const Constraint_sys<T>& constraints, size_t sol_size
 		g.add_edge(c.i, c.j, c.limit);
 	// assume indices given in 1 2 .. n
 	// generate source vertex that's not in graph
+	// can get rid of adding source vertex if initial shortest distance is 0 instead of POS_INF
 	size_t s {POS_INF(size_t)};
 	while(g.is_vertex(s)) s >>= 1;
 	// add 0-edges to all vertices
@@ -56,6 +57,17 @@ Constraint_sol<T> feasible(const Constraint_sys<T>& constraints, size_t sol_size
 	for (size_t i = 1; i <= sol_size; ++i) res.push_back(solution[i].distance);
 	return res;
 }
+
+// can use to maximize profit of arbitrage (currency trading)
+// each currency is a vertex, each edge is conversion
+// R[i1,i2] * R[i2,i3] * R[i3,i4] * .. > 1
+// iff 1/R[i1,i2] * 1/R[i2,i3] * 1/R[i3,i4] * .. < 1
+// or lg(1/R[i1,i2]) + lg(1/R[i2,i3]) + lg(1/R[i3,i4]) .. < 0
+// so edge weight is lg(1/R[i,j]) = -lg(R[i,j])
+
+// if negative cycle exists, then there is profitable cycle
+// to get cycle, relax all edges once more
+// then follow parents until a vertex whose distance changed in the last cycle
 
 
 }	// end namespace sal

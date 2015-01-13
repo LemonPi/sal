@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <limits>	// numeric limits
 #include "../algo/utility.h"	// Rand int
+#include "../algo/macros.h"		// POS_INF
 
 using namespace std;
 
@@ -19,7 +20,8 @@ class Matrix {
 
 	void rotate_copy();
 public:
-	Matrix(size_t r, size_t c) : elems(r*c, 0), rows{r}, cols{c}  {}	// default init to 0
+	Matrix() : rows{0}, cols{0} {};
+	Matrix(size_t r, size_t c, T d = 0) : elems(r*c, d), rows{r}, cols{c}  {}	// default init to 0
 	Matrix(size_t r, size_t c, vector<T>&& e) : elems{std::move(e)}, rows{r}, cols{c}  {}
 	Matrix(const initializer_list<initializer_list<T>>& a);
 	Matrix(const Matrix& a) : elems{a.elems}, rows{a.row()}, cols{a.col()}  {}
@@ -68,6 +70,33 @@ public:
 
 	void print() const {std::cout << *this;}
 
+	// convenient row and col operations
+	template <typename Op>
+	T row_op(size_t row, Op&& op, T res = 0) {
+		for (size_t col = 0; col < cols; ++col)
+			op(res, elems[row*cols + col]);
+		return res;
+	}
+	template <typename Op>
+	T col_op(size_t col, Op&& op, T res = 0) {
+		for (size_t row = 0; row < rows; ++row)
+			op(res, elems[row*cols + col]);
+		return res;
+	}
+	T row_sum(size_t row) const {
+		row_op(row, [](T& res, const T& elem){res += elem;}, 0);
+	}
+	T col_sum(size_t col) const {
+		col_op(col, [](T& res, const T& elem){res += elem;}, 0);
+	}
+	T row_prod(size_t row) const {
+		row_op(row, [](T& res, const T& elem){res *= elem;}, 0);
+	}
+	T col_prod(size_t col) const {
+		col_op(col, [](T& res, const T& elem){res *= elem;}, 0);
+	}	
+
+	// essential operators
 	Matrix<T>& operator*=(T);
 	Matrix<T>& operator*=(const Matrix&);
 	Matrix<T>& operator+=(const Matrix&);
@@ -254,8 +283,12 @@ Matrix<T> operator-(const Matrix<T>& a, const Matrix<T>& b) {
 template <typename T>
 ostream& operator<<(ostream& os, const Matrix<T>& m) {
 	for (int i = 0; i < m.rows; ++i) {
-		for (int j = 0; j < m.cols; ++j)
-			os << setw(5) << m.get(i,j) << ' ';
+		for (int j = 0; j < m.cols; ++j) {
+			os << setw(5);
+			if (m.get(i,j) == POS_INF(T)) os << "inf";
+			else os << m.get(i,j);
+			os << ' ';
+		}
 		os << endl;
 	}
 	return os;

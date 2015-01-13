@@ -27,6 +27,7 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 	initialize_single_source(property, g, s);
 
 	// need at most |V| - 1 passes since shortest path is always simple (cycles are banned)
+	size_t pass {1};
 	bool changed {true};
 	while (changed) {
 		changed = false;
@@ -34,6 +35,7 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 		for (auto u = g.begin(); u != g.end(); ++u)
 			for (auto v = u.begin(); v != u.end(); ++v) 
 				if (visitor.relax(property, {*u, v})) changed = true;
+		if (++pass == g.num_vertex()) break;	// in case negative cycle exists
 	}
 	// check if triangle inequality violated
 	for (auto u = g.begin(); u != g.end(); ++u)

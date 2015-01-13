@@ -367,6 +367,17 @@ void test_difference_constraint(bool print) {
 			PRINTLINE("FAILED...Difference constraint feasibility with Bellman-Ford");
 }
 
+void test_adjacency_matrix(bool print) {
+	// std::vector<sal::UEdge<size_t>> edges {{0,1},{0,2},{1,2},{3,2}};
+	// sal::graph_mat<int> g {edges.begin(), edges.end(), 4};
+
+	sal::graph_mat<int> g {{0,1},{0,2},{1,2},{3,2}};
+	if (print) std::cout << g;
+
+	sal::digraph_mat<int> h {{0,1},{0,2},{1,2},{3,2}};
+	if (print) std:: cout << h;
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
@@ -390,4 +401,6 @@ int main(int argc, char** argv) {
 	test_shortest_dag(print);
 	test_dijkstra(print);
 	test_difference_constraint(print);
+
+	test_adjacency_matrix(print);
 }
