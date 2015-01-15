@@ -1091,7 +1091,7 @@ graph<char> circuit {{'a','b',4},{'a','h',8},{'b','h',11},{'b','c',8},{'c','i',2
 				{'i','h',7},{'i','g',6},{'h','g',1}};
 
 // cheapest way to connect all the circuit nodes (suppose edges were wire lengths)
-auto mst = sal::min_span_tree(salesman);
+auto mst = min_span_tree(circuit);
 // each vertex-property pair from the MST property map
 // hold parent and the min_edge cost to parent
 
@@ -1149,6 +1149,7 @@ graph<char> shortest_g {pm_to_tree(mst)};
 ```
 
 ###### sal/data/graph/linear.h --- <a name="linear">linear programming</a>
+```C++
 // optimizing solutions to a system under certain constraints
 // mathematically: Ax <= b
 // A <- m x n system
@@ -1179,3 +1180,4 @@ solution.empty();
 // false (true if system of constraints is unfeasible)
 
 // sum of solution and their spread is minimized
+```
