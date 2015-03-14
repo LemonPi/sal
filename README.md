@@ -1,7 +1,7 @@
 SAL - simple algorithms and datastructures library
 ===
 
-A C++ header only library containing efficient algorithms and data structures implemented simply.  
+A c++ header only library containing efficient algorithms and data structures implemented simply.  
 
 Simplicity here refers to how close the implementation matches the core concepts of each algorithm,
 rather than the triviality of each algorithm.
@@ -42,13 +42,17 @@ For examples, look at algotest.cpp and datatest.cpp
 Algorithms
 ---
 ###### [sal/algo/numerics.h --- numeric](#numeric)
-- modular exponentiation
-- integer exponentiation
-- fibonacci generation
-- cyclic number generation and detection
-- greatest common denominator
+- `Θ(lg(exponent))` modular exponentiation
+- `Θ(lg(exponent))` integer exponentiation
+- `Θ(lg(n))` fibonacci generation
+- `Θ(prime)` cyclic number generation and detection (1/prime in a given base)
+- `Θ(M(n))` checking for perfect square (M(n) is the complexity of the multiplication algorithm used)
+- `Θ(lg(ab))` greatest common denominator of integers a and b
 - totient (number coprimes below)
-- checking for perfect square and powers of
+- `Θ(n^3)` matrix chain multiplication ordering
+- prime factorize
+- number of total factors
+- sum of total factors
 
 ###### [sal/algo/perm.h --- permutation and combination](#perm)
 - kth permutation of an indexable sequence
@@ -89,11 +93,6 @@ Algorithms
 
 ###### [sal/algo/string.h --- edit distances](#string)
 - levenshtein distance
-
-###### [sal/algo/factorize.h --- factorization of integers](#factorize)
-- prime factorize
-- number of total factors
-- sum of total factors
 
 ###### [sal/algo/utility.h --- utility and testing functions](#utility)
 - random integer generation
@@ -167,36 +166,47 @@ Example usage
 ```namespace sal``` will be used implicitely here  
 functions that take iterator pairs are overloaded to take containers as well  
 ###### sal/algo/numeric.h --- <a name="numeric">numeric</a>
-```C++
+```c++
 // 7^91 % 10
-int a = modular_pow(7, 91, 10); 
+modular_pow(7, 91, 10); 
 // int 3
+
+// 13789^722341 % 2345
+modular_pow(13789, 722341, 2345); 
+// int 2029
 
 
 int_pow(5, 3);
 // int 125
 
 
-Infint c = fibonacci(1000);
+fibonacci<Infint>(1000);
 // Infint 43466557686937456435688527675040625802564660517371780402481729089536555417949051890403879840079255169295922593080322634775209689623239873322471161642996440906533187938298969649928516003704476137795166849228875
 
 
 // repeating part of 1/7 in base 10
 make_cyclic(10, 7);
-// Infint 142857
+// size_t 142857
 
 
 // length of repeating part of 1/7 in base 10
 cycle_length(10, 7);
-// int 6
+// size_t 6
 
+// check if number is an integer power of a base
+is_pow(4194304,4);
+// bool true
+
+// check if number is a perfect square
+is_square(21489798124);
+// bool false
 
 // greatest common denominator
 gcd(56, 91);
 // unsigned int 7
 
 
-// multiplies matrices using optimal parenthesization to minimize work
+// chain matrix multiplication ordering to minimize work
 std::vector<Matrix<int>> mats;
 size_t row {30}, col {35};
 for (int i = 0; i != 100; ++i) {
@@ -215,12 +225,34 @@ phi(500);
 // big_int 200 (200 numbers below 500 that are coprime with it)
 
 
-// check for perfect square
-is_square(21489798124);
-// bool false
+size_t num = 421412;
+
+// prime factorize regular numbers (usually smooth) ----------
+factorize(421412);
+// vector<size_t> 2 2 137 769 (in order)
+
+
+num_factors(num);
+// size_t 12 (1 2 4 137 274 548 769 1538 3076 105353 210706 421412)
+
+sum_factors(num);
+// size_t 743820 (1 + 2 + 4 + 137 + ... + 421412)
+
+
+
+// factorize primes or semiprimes ----
+big_int semiprime = 32452843 * 32452867;	// 1053187797650881
+
+// would still not be too slow
+factorize(semiprime);
+
+// would be faster
+factorize_rough(semiprime);
+// would be much faster for repeated uses (primes are kept static)
+
 ```
 ###### sal/algo/perm.h --- <a name="perm">permutation and combination</a>
-```C++
+```c++
 std::string words {"Hello"};
 
 // modifies the sequence without return
@@ -257,7 +289,7 @@ int combos = count_combos(coins, 200);
 // size_t 73682 (ways to sum up to 200 using coins)
 ```
 ###### sal/algo/prime.h --- <a name="prime">prime generation and manipulation</a>
-```C++
+```c++
 // keep a sieve object if continuous work with primes is needed
 using big_int = size_t;
 Sieve<big_int> sieve;
@@ -291,7 +323,7 @@ sieve.primes_upto(1000000);
 
 ```
 ###### sal/algo/search.h --- <a name="search">basic searching, substring matching, and finding longest common features</a>
-```C++
+```c++
 std::vector<int> seq {1,3,12,14,15,18,20};
 // bin_search assumes sequence is in order and elements are comparable
 bin_search(seq.begin(), seq.end(), 12);
@@ -329,7 +361,7 @@ select(v.begin(), v.end(), 4);
 // iterator to 4th element (50)
 ```
 ###### sal/algo/sort.h --- <a name="sort">comparison, distributive, and hybrid sorts</a>
-```C++
+```c++
 std::vector<int> u {632, 32, 31, 88, 77, 942, 5, 23};
 partition(u.begin(), u.end());
 // iterator to pivot 77
@@ -365,43 +397,16 @@ tim_sort(v.begin(), v.end());
 ```
 
 ###### sal/algo/string.h --- <a name="string">edit distances</a>
-```C++
+```c++
 // # edit actions including insertion, deletion, or substitution to turn source into new
 levenshtein("Saturday", "Sunday");
 // size_t 3 
 ```
 
-###### sal/algo/factorize.h --- <a name="factorize">factorization of integers</a>
-```C++
-size_t num = 421412;
 
-// prime factorize regular numbers (usually smooth) ----------
-factorize(421412);
-// vector<size_t> 2 2 137 769 (in order)
-
-
-num_factors(num);
-// size_t 12 (1 2 4 137 274 548 769 1538 3076 105353 210706 421412)
-
-sum_factors(num);
-// size_t 743820 (1 + 2 + 4 + 137 + ... + 421412)
-
-
-
-// factorize primes or semiprimes ----
-big_int semiprime = 32452843 * 32452867;	// 1053187797650881
-
-// would still not be too slow
-factorize(semiprime);
-
-// would be faster
-factorize_rough(semiprime);
-// would be much faster for repeated uses (primes are kept static)
-
-```
 
 ###### sal/algo/utility.h --- <a name="utility">utility and testing functions</a>
-```C++
+```c++
 // precision timing, starts counting when constructed
 Timer timing;
 
@@ -432,7 +437,7 @@ timing.tonow();
 // double in microseconds 
 ```
 ###### sal/data/list.h --- <a name="list">basic linked list</a>
-```C++
+```c++
 // Construction ----------------------
 Basic_list<int> l {5, 7, 11, 13, 17, 19};
 std::cout << l;
@@ -472,7 +477,7 @@ l.remove_dup();
 ```
 
 ###### sal/data/heap.h --- <a name="heap">Binary heap</a>
-```C++
+```c++
 // great for use as a priority queue
 // advantage over std::priority_queue or using make_heap and friends
 // can find key in Ө(1) time and change its value in Ө(lgn) time
@@ -573,7 +578,7 @@ maxheap.batch_insert(temp.begin(), temp.end());
 
 ```
 ###### sal/data/matrix.h --- <a name="matrix">2D matrix</a>
-```C++
+```c++
 // Construction ----------------------
 Matrix<int> A {{2, 5, 6},
 	       {3, 4, -3},
@@ -648,7 +653,7 @@ C.rotate();
 ```
 
 ###### sal/data/tree.h --- <a name="tree">red black tree and augmentations of it</a>
-```C++
+```c++
 // Basic tree usage ------------------
 Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
 
@@ -797,7 +802,7 @@ t.rank(node.get());
 
 ```
 ###### sal/data/interval.h --- <a name="interval">interval tree</a>
-```C++
+```c++
 // for finding overlapping intervals, useful for scheduling and collision detection
 // Construction ----------------------
 Interval_set<int> t {{16,21},{8,9},{5,8},{15,23},{25,30},{0, 3},{6, 10},{17,19}, 
@@ -830,7 +835,7 @@ t.find_exact(16, 21);
 // iterator to [16, 21]
 ```
 ###### sal/data/graph.h --- <a name="graph">directed and undirected graphs</a>
-```C++
+```c++
 // Construction ----------------------
 // unweighted is equivalent to having uniform weight 1
 // undirected and unweighted graph by default
@@ -915,7 +920,7 @@ for (auto u = v.begin(); u != v.end(); ++u)
 
 ```
 ###### sal/data/graph/search.h --- <a name="graph_search">graph searches</a>
-```C++
+```c++
 /* algorithms expects Graph to have: 
 	vertex iterators in begin() and end() (and reverse iterators in rbegin(), rend())
   		* gives vertex name of type V
@@ -1021,7 +1026,7 @@ struct Graph_visitor {
 
 ```
 ###### sal/data/graph/utility.h --- <a name="graph_utility">important graph algorithms</a>
-```C++
+```c++
 // topological sort ------------------
 // for directed acyclic graph (dag)
 // orders all vertices so that parent vertices are always before children
@@ -1103,7 +1108,7 @@ graph<char> min_circuit {pm_to_tree(mst)};
 ```
 
 ###### sal/data/graph/shortest.h --- <a name="shortest">shortest path for different graphs and models</a>
-```C++
+```c++
 // Single source shortest paths ------
 
 
@@ -1149,7 +1154,7 @@ graph<char> shortest_g {pm_to_tree(mst)};
 ```
 
 ###### sal/data/graph/linear.h --- <a name="linear">linear programming</a>
-```C++
+```c++
 // optimizing solutions to a system under certain constraints
 // mathematically: Ax <= b
 // A <- m x n system
