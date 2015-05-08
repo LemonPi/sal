@@ -82,7 +82,8 @@ Algorithms
 ###### [sal/algo/sort.h --- comparison, distributive, and hybrid sorts](#sort)
 - partition
 - bubble sort
-- insertion sort
+- linear insertion sort
+- binary insertion sort
 - merge sort
 - quick sort
 - heap sort
