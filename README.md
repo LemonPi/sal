@@ -373,8 +373,15 @@ std::vector<int> v {randgen(1048576, 100000)};	// 2^20
 
 bub_sort(v.begin(), v.end());
 
+
 // need to know maximum for counting sort, else wastes one pass finding maximum
 cnt_sort(v.begin(), v.end(), 1048577);
+// can also not specify anything, additional call to min_max
+cnt_sort(v.begin(), v.end());
+
+// sort only on only bits 20-12 which only requires 2^8 = 256 bits of storage
+cnt_sort(v.begin(), v.end(), 256, [](int n){return (n & 0xFF000) >> 12;});
+
 
 // binary insertion sort
 ins_sort(v.begin(), v.end());
