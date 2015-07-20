@@ -12,6 +12,7 @@ namespace sal {
 enum class Color : char {BLACK = 0, RED = 1};
 
 // core utilities
+// either finds key or the location where the key should go
 template <typename Node>
 Node* tree_find(Node* start, typename Node::key_type key) {
 	while (start != Node::nil && start->key != key) {

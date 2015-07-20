@@ -49,18 +49,26 @@ public:
 		n->next = head;
 		head = n;
 	}	
+	// upon insertion, ownership of node transfers over to List 
+	// inserting nullptr does nothing
 	void insert(NP node) {
-		node->next = head;
-		head = node;
+		if (node) {
+			node->next = head;
+			head = node;
+		}
 	}
 	void insert_after(T d, NP prev) {
-		NP n = new Node{d};
-		n->next = prev->next;
-		prev->next = n;
+		if (prev) {
+			NP n = new Node{d};
+			n->next = prev->next;
+			prev->next = n;
+		}
 	}
 	void insert_after(NP node, NP prev) {
-		node->next = prev->next;
-		prev->next = node;
+		if (node && prev) {
+			node->next = prev->next;
+			prev->next = node;
+		}
 	}
 	// append to tail
 	void append(T d) {
@@ -89,13 +97,13 @@ public:
 	void remove_dup() {
 		std::unordered_set<T> elems(head->data);
 		// cannot have duplicate in first element
-		for (Node* node = head; node != nullptr && node->next != nullptr; node = node->next) {
-			if (elems.find(node->next->data) != elems.end()) {
+		for (Node* node = head; node->next; node = node->next) {
+			while (node->next && elems.find(node->next->data) != elems.end()) {
 				NP to_del {node->next};
 				node->next = node->next->next;
 				delete to_del;
 			}
-			else elems.insert(node->next->data);
+			elems.insert(node->next->data);
 		}
 	}
 
@@ -116,7 +124,7 @@ std::istream& operator>>(std::istream& is, List<Node>& l) {
 		node->next = new Node{tmp};
 		node = node->next;
 	}
-	l.append_node(start);	// only need to append once
+	l.append(start);	// only need to append once
 	return is;
 }
 

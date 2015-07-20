@@ -23,7 +23,7 @@ public:
 	Matrix() : rows{0}, cols{0} {};
 	Matrix(size_t r, size_t c, T d = 0) : elems(r*c, d), rows{r}, cols{c}  {}	// default init to 0
 	Matrix(size_t r, size_t c, vector<T>&& e) : elems{std::move(e)}, rows{r}, cols{c}  {}
-	Matrix(const initializer_list<initializer_list<T>>& a);
+	Matrix(initializer_list<initializer_list<T>> a);
 	Matrix(const Matrix& a) : elems{a.elems}, rows{a.row()}, cols{a.col()}  {}
 	Matrix(Matrix&& a) : elems{std::move(a.elems)}, rows{a.row()}, cols{a.col()}  {}
 	Matrix<T>& operator=(const Matrix& a) {
@@ -51,6 +51,7 @@ public:
 		vector<T> new_elems(new_rows * new_cols, def);
 		for (size_t r = 0; r < row_max; ++r) {
 			for (size_t c = 0; c < col_max; ++c) {
+				// start of row to end of future column
 				std::copy(elems.begin() + r*cols, elems.begin() + r*cols + col_max, 
 					new_elems.begin() + r*new_cols);
 			}
@@ -132,7 +133,7 @@ Matrix<T> random_matrix(size_t row, size_t col,
 }
 
 template <typename T>
-Matrix<T>::Matrix(const initializer_list<initializer_list<T>>& a) : rows{a.size()}, cols{a.size() ? a.begin()->size() : 0} {
+Matrix<T>::Matrix(initializer_list<initializer_list<T>> a) : rows{a.size()}, cols{a.size() ? a.begin()->size() : 0} {
 	elems.reserve(rows * cols);
 	for (const auto& r : a) 
 		for (const auto& c : r) 
@@ -150,7 +151,7 @@ void Matrix<T>::rotate() {	// clockwise
 			int offset = i - first;
 
 			// save top
-			int top = elems[first*cols + i];
+			T top = elems[first*cols + i];
 			// left -> top
 			elems[first*cols + i] = elems[(last - offset)*cols + first];
 			// bot -> left
@@ -210,7 +211,7 @@ Matrix<T>& Matrix<T>::operator*=(const Matrix& a) {
 	// naive O(n^3) algorithm, which works well for small matrices
 	for (size_t i = 0; i < rows; ++i) {
 		for (size_t j = 0; j < a.cols; ++j) {
-			T elem {};
+			T elem {0};
 			for (size_t k = 0; k < cols; ++k) {
 				elem += get(i, k) * a.get(k, j);
 			}
