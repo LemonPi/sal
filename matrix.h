@@ -252,7 +252,7 @@ Matrix<T>& Matrix<T>::pow(size_t exponent) {
 template <typename T>
 bool Matrix<T>::operator==(const Matrix& a) const {
 	if (rows != a.rows || cols != a.cols) return false;
-	for (int i = 0; i < elems.size(); ++i)
+	for (size_t i = 0; i < elems.size(); ++i)
 		if (elems[i] != a.elems[i]) return false;
 	return true;
 }
@@ -283,8 +283,8 @@ Matrix<T> operator-(const Matrix<T>& a, const Matrix<T>& b) {
 
 template <typename T>
 ostream& operator<<(ostream& os, const Matrix<T>& m) {
-	for (int i = 0; i < m.rows; ++i) {
-		for (int j = 0; j < m.cols; ++j) {
+	for (size_t i = 0; i < m.rows; ++i) {
+		for (size_t j = 0; j < m.cols; ++j) {
 			os << setw(5);
 			if (m.get(i,j) == POS_INF(T)) os << "inf";
 			else os << m.get(i,j);

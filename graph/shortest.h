@@ -41,7 +41,7 @@ SPM<Graph> bellman_ford(const Graph& g, typename Graph::vertex_type s, Visitor&&
 	for (auto u = g.begin(); u != g.end(); ++u)
 		for (auto v = u.begin(); v != u.end(); ++v) 
 			if (property[*v].distance > property[*u].distance + v.weight())
-				return {};	// -infinity cycle exists
+				return SPM<Graph>{};	// -infinity cycle exists
 	return property;
 }
 
