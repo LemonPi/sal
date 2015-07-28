@@ -1,6 +1,6 @@
 [submodule "algo"]
 	path = algo
-	url = https://github.com/LemonPi/algo.git
+	url = git@github.com:LemonPi/algo.git
 [submodule "data"]
 	path = data
-	url = https://github.com/LemonPi/data.git
+	url = git@github.com:LemonPi/data.git
