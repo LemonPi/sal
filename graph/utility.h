@@ -171,18 +171,19 @@ using SPM = Shortest_property_map<typename Graph::vertex_type, typename Graph::e
 struct MST_visitor {
 	// relaxes an edge if it meets certain requirements
 	template <typename Property_map, typename Queue>
-	void relax(Property_map& property, Queue& exploring, 
+	void relax(Property_map& property, 
+		const std::unordered_set<typename Property_map::key_type>& explored,
+		Queue& exploring, 
 		const Edge<typename Property_map::key_type, 
 				   typename Property_map::mapped_type::edge_type>& edge) {
 
-		size_t d_i {exploring.key(edge.dest())};
 		// d_i == 0 means not in exploring
 		// distance for MST means minimum edge weight connecting to it
-		if (d_i && edge.weight() < property[edge.dest()].distance) {
+		if (explored.find(edge.dest()) == explored.end() && edge.weight() < property[edge.dest()].distance) {
 			property[edge.dest()].distance = edge.weight();
 			property[edge.dest()].parent = edge.source();
 			// fix heap property
-			exploring.check_key(d_i);
+			exploring.sift_up(exploring.key(edge.dest()), edge.dest());
 		}		
 	}
 };
@@ -198,6 +199,7 @@ SPM<Graph> min_span_tree(const Graph& g, MST_visitor&& visitor = {}) {
 	// comparator querying on distance
 	initialize_single_source(property, g, *g.begin());
 
+	std::unordered_set<V> explored;
 	Heap<V, Cmp> exploring {Cmp{property}};
 	exploring.batch_insert(g.begin(), g.end());
 
@@ -205,11 +207,12 @@ SPM<Graph> min_span_tree(const Graph& g, MST_visitor&& visitor = {}) {
 
 	while (!exploring.empty()) {
 		V u {exploring.extract_top()};
+		explored.insert(u);
 		// for each adjacent vertex
 		auto edges = g.adjacent(u);
 		for (auto v = edges.first; v != edges.second; ++v) {
 			// relaxation
-			visitor.relax(property, exploring, {u, v});
+			visitor.relax(property, explored, exploring, {u, v});
 		}
 	}
 	return property;

@@ -85,16 +85,19 @@ SPM<Graph> critical_dag(Graph& g, typename Graph::vertex_type s, Visitor&& visit
 struct DJ_visitor {
 	// relaxes an edge if it meets certain requirements
 	template <typename Property_map, typename Queue>
-	void relax(Property_map& property, Queue& exploring, 
-		const Edge<typename Property_map::key_type, 
-				   typename Property_map::mapped_type::edge_type>& edge) {
-		size_t d_i {exploring.key(edge.dest())};
-		// d_i == 0 means not in exploring
-		if (d_i && edge.weight() < property[edge.dest()].distance + edge.weight()) {
+	void relax(Property_map& property, 
+				const std::unordered_set<typename Property_map::key_type>& explored,
+				Queue& exploring, 
+				const Edge<typename Property_map::key_type, 
+			    typename Property_map::mapped_type::edge_type>& edge) {
+		// haven't explored yet and the cost is less
+		if (explored.find(edge.dest()) == explored.end() && 
+			edge.weight() < property[edge.dest()].distance + edge.weight()) {
+
 			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
 			property[edge.dest()].parent = edge.source();
 			// fix heap property
-			exploring.check_key(d_i);
+			exploring.sift_up(exploring.key(edge.dest()), edge.dest());
 		}		
 	}
 };
@@ -106,15 +109,17 @@ SPM<Graph> dijkstra(const Graph& g, typename Graph::vertex_type s, DJ_visitor&& 
 	SPM<Graph> property;
 	initialize_single_source(property, g, s);
 
+	std::unordered_set<V> explored;
 	// comparator querying on distance
 	Heap<V, Cmp> exploring {Cmp{property}};
 	exploring.batch_insert(g.begin(), g.end());
 
 	while (!exploring.empty()) {
 		V u {exploring.extract_top()};
+		explored.insert(u);
 		auto edges = g.adjacent(u);
 		for (auto v = edges.first; v != edges.second; ++v) 
-			visitor.relax(property, exploring, {u, v});
+			visitor.relax(property, explored, exploring, {u, v});
 	}
 
 	return property;

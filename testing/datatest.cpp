@@ -44,6 +44,9 @@ void test_pow(bool print) {
 void test_heap(bool print) {
 	sal::Heap<int> h2 {3, 4, 6, 5, 1, 8, 11, 12};
 	if (print) sal::print(h2);
+	if (!h2.is_maxheap()) cout << "FAILED...Heap construction\n";
+	if (h2.key(12) != 1 || h2.key(11) != 3) cout << "FAILED...Heap find key\n";
+
 	std::make_heap(h2.begin(), h2.end());
 	if (print) sal::print(h2);
 	// should be the same after trying to makeheap
@@ -65,17 +68,23 @@ void test_heap(bool print) {
 	// create comparator
 	sal::Heap<int, Cmp> h {Cmp{property}};
 	
+	if (print) cout << "batch inserting\n";
 	h.batch_insert(order.begin(), order.end());
-	 
+
+	size_t prechange_key {h.key(6)};
 	property[6].distance = 10;
-	h.check_key(h.key(6));
+	if (print) {
+		sal::print(h);
+		cout << "sifting up 6 with index " << prechange_key << endl;
+	}
+	h.sift_down(prechange_key);
 
-
+	if (print) cout << "binary heap print\n";
 	while (!h.empty()) {
 		auto top = h.extract_top();
-		if (print) std::cout << top << '\t' << std::endl;
-		if (!h.correct_index()) PRINTLINE("INCORRECT INDEXING");
+		if (print) std::cout << top << ':' << property[top].distance << endl;
 	}
+	cout << endl;
 }
 
 void test_tree(bool print) {

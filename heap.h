@@ -7,47 +7,69 @@
 
 namespace sal {
 
-// differentiate the implementation based on whether data is simple
-template <typename T, typename Cmp = std::greater<T>, bool ispod = std::is_pod<T>::value>
-struct Heap;
-
 // simple, plain old data implementation can work with copies of it
 // swapping should be cheap and there shouldn't be ownership issues
 // by default maxheap where parent greater than children
-template <typename T, typename Cmp>
-class Heap<T, Cmp, true> {	
+template <typename T, typename Cmp = std::greater<T>>
+class Heap {	
 	// default representation is as a vector, index at 1 so need 1 extra element
 	std::vector<T> elems;
-	// associate each key with an index
-	std::unordered_map<T,size_t> index;
-	// comparator for sorting in a maxheap
+	// comparator for sorting in a maxheap cmp(a, b) being true means a is an ancestor of b
 	Cmp cmp;
-	size_t parent(size_t i) {return i >> 1;}
-	size_t left(size_t i) {return i << 1;}
-	size_t right(size_t i) {return (i << 1) + 1;}
+	size_t parent(size_t i) const {return i >> 1;}
+	size_t left(size_t i)   const {return i << 1;}
+	size_t right(size_t i)  const {return (i << 1) + 1;}
+	size_t tail() const {return elems.size() - 1;}
+public:
+	// only exposing due to occasionaly indirect value changes
+	// float value up for directly changed value
+	void sift_up(size_t i, const T& item) {
+		while (i > 1 && cmp(item, elems[parent(i)])) {
+			elems[i] = elems[parent(i)];
+			i = parent(i);
+		}		
+		elems[i] = item;
+	}
+	// float value up if its value was changed indirectly (through comparator)
+	void sift_up(size_t i) {
+		const T& prev_val {elems[i]};
+		sift_up(i, prev_val);
+	}
+	// adjusts elems[i] assuming it's been modified to be smaller than its children
+	// runs in O(lgn) time, floats elems[i] down
+	void sift_down(size_t hole) {
+		T item {std::move(elems[hole])};
+		size_t child {left(hole)};
+		while (child < elems.size()) {
+			if (child + 1 < elems.size() && cmp(elems[child + 1], elems[child]))
+				++child;
+			if (cmp(elems[child], item)) {
+				elems[hole] = std::move(elems[child]);
+				hole = child;
+				child = left(child);
+			}
+			else break;
+		}
+		elems[hole] = std::move(item);
+	}
+private:	
 	// runs in O(n) time, produces max heap from unordered input array
 	void build_heap() {
 		// second half of elems are leaves, 1 elem is maxheap by default
 		for (size_t i = elems.size() >> 1; i != 0; --i) 
-			heapify(i);
+			sift_down(i);
 	}
-	// adjusts elems[i] assuming it's been modified to be smaller than its children
-	// runs in O(lgn) time, floats elems[i] down
-	void heapify(size_t i) {
-		while (true) {
-			size_t l = left(i), r = right(i);
-			size_t largest = i;	
-			// largest of elems[i], elems[l], and elems[r]
-			if (l < elems.size() && cmp(elems[l], elems[i]))
-				largest = l;
-			if (r < elems.size() && cmp(elems[r], elems[largest]))
-				largest = r;
-			// do until elems[i] is max heap
-			if (largest == i) break;
-			std::swap(elems[i], elems[largest]);
-			std::swap(index[elems[i]], index[elems[largest]]);
-			i = largest;
-		}
+	size_t find_key(size_t head, const T& elem) const {
+		if (elems[head] == elem) return head;
+		size_t child_location {0};	// 0 indicates not found
+		// cmp(elem, child) being true would imply that elem has to be a parent of child, therefore don't search there
+		if (right(head) < elems.size() && !cmp(elem, elems[right(head)]))
+			child_location = find_key(right(head), elem);
+		if (child_location) return child_location;
+
+		if (left(head) < elems.size() && !cmp(elem, elems[left(head)]))
+			child_location = find_key(left(head), elem);
+		return child_location;
 	}
 public:
 	using value_type = T;
@@ -57,84 +79,108 @@ public:
 
 	// construction ------------
 	// O(n) time construction via these constructors (would be O(nlgn) for repeated inserts)
-	Heap(Cmp&& c) : elems{T{}}, cmp(c) {}
+	explicit Heap(Cmp&& c) : elems{T{}}, cmp(c) {}
+	// transfer ownership of contents (int to prevent overload conflict)
+	template <typename Container>
+	Heap(Container&& container, int, Cmp&& c = Cmp{}) : elems(std::move(container)), cmp(c) {
+		elems.push_back(SENTINEL(T));
+		std::swap(elems.back(), elems[0]);
+		build_heap();
+	} 
 	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(l.size()+1);
 		elems.push_back(SENTINEL(T));
-		for (const T& v : l) {index[v] = elems.size(); elems.push_back(v);}
+		// cannot move from initializer list...
+		for (const T& v : l) {elems.push_back(v);}
 		build_heap();
 	}
 	template <typename Iter>
 	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
 		elems.reserve(end - begin + 1);
 		elems.push_back(SENTINEL(T));
-		while (begin != end) {index[*begin] = elems.size(); elems.push_back(*begin); ++begin;}
+		while (begin != end) {elems.emplace_back(std::move(*begin)); ++begin;}
 		build_heap();
 	}
 
 	// query ---------------
 	bool empty() const 	{return elems.size() <= 1;}
 	size_t size() const {return elems.size() - 1;}
-	T top() const 		{return elems[1];}
-	// index of key, 0 means key not found
-	size_t key(T k) const {
-		auto itr = index.find(k);
-		return (itr == index.end())? 0 : itr->second;
+	const T& top() const 		{return elems[1];}
+	// get index to item
+	size_t key(const T& item) const {
+		return find_key(1, item);
 	}
 
+
 	// extraction ----------
-	// runs in O(lgn) time due to heapify
+	// runs in O(lgn) time due to sift_down
 	T extract_top() {
 		// heap underflow
-		if (elems.size() <= 1) return SENTINEL(T); 
+		if (empty()) return SENTINEL(T); 
 
 		T top {elems[1]};
-		std::swap(elems[1],elems.back());
-		index[elems[1]] = 1;
 
-		index.erase(elems.back());
+		size_t hole {1};
+		size_t child {2};
+		while (child+1 < elems.size()) {
+			if (cmp(elems[child + 1], elems[child])) 
+				++child;
+			elems[hole] = elems[child];
+			hole = child;
+			child = left(child);
+		}
+		// replace hole with rightmost leaf
+		elems[hole] = elems[tail()];
 		elems.pop_back();
-		heapify(1);
+		sift_up(hole, elems[hole]);
+		return top;
+	}
+	// gets top while inserting a new element, same complexity as extracting top
+	T replace_top(T&& new_elem) {
+		if (empty()) {elems.emplace_back(new_elem); return SENTINEL(T);}
+		T top {elems[1]};
+
+		size_t hole {1};
+		size_t child {2};
+		while (child+1 < elems.size()) {
+			if (cmp(elems[child + 1], elems[child])) 
+				++child;
+			elems[hole] = elems[child];
+			hole = child;
+			child = left(child);
+		}
+		// replace hole with new element
+		sift_up(hole, new_elem);
 		return top;
 	}
 
+
+
 	// modification ----------
+	// O(lgn)
 	void insert(T key) {
-		index[key] = elems.size();
-		elems.push_back(key);
-		check_key(elems.size()-1);
+		elems.emplace_back();
+		sift_up(elems.size()-1, key);
 	}
 	// O(n) like constructor for all elements
 	template <typename Iter>
 	void batch_insert(Iter begin, Iter end) {
-		while (begin != end) {index[*begin] = elems.size(); elems.push_back(*begin); ++begin;}
+		while (begin != end) {elems.push_back(*begin); ++begin;}
 		build_heap();
 	}
-	// repeadtedly compare against parent
-	void change_key(size_t i, T key) {
-		// change should only float up (so only increase on maxheap and decrease on minheap)
-		if (cmp(elems[i], key)) return;
-		elems[i] = key;
-		while (i > 1 && cmp(elems[i], elems[parent(i)])) {
-			std::swap(elems[i], elems[parent(i)]);
-			std::swap(index[elems[i]], index[elems[parent(i)]]);
-			i = parent(i);
-		}
+
+	// only for direct changes; for indirect changes, have to know whether to sift up or down
+	void increase_key(size_t i, const T& changed) {
+		sift_up(i, changed);	// move closer to root
 	}
-	void change_val(T old, T changed) {
-		change_key(key(old),changed);
-	}
-	// float value up if its value was changed indirectly (through comparator)
-	void check_key(size_t i) {
-		while (i > 1 && cmp(elems[i], elems[parent(i)])) {
-			std::swap(elems[i], elems[parent(i)]);
-			std::swap(index[elems[i]], index[elems[parent(i)]]);
-			i = parent(i);
-		}		
+	void decrease_key(size_t i, const T& changed) {
+		elems[i] = changed;
+		sift_down(i);	// move closer to a leaf
 	}
 
 
-	// iteration -------------
+
+	// iteration in element order (not heap) -------------
 	iterator begin() {return elems.begin() + 1;}
 	iterator end() 	 {return elems.end();}
 	const_iterator begin() const {return elems.cbegin() + 1;}
@@ -142,217 +188,8 @@ public:
 
 	bool is_maxheap() const {return std::is_heap(elems.begin()+1, elems.end());}
 	bool is_minheap() const {return std::is_heap(elems.begin()+1, elems.end(), std::greater<T>{});}
-	bool correct_index() const {
-		for (auto itr : index) if (itr.first != elems[itr.second])
-			return false;
-		return true;
-	}
 };
 
-
-// iterator wrappers for non-POD types
-// only difference is operator* which does 2 levels of dereference
-template <typename Iter>
-struct Heap_iterator {
-	using CR = const Heap_iterator<Iter>&;
-	using T = typename std::iterator_traits<typename Iter::value_type>::value_type;
-	Iter cur;
-
-	void operator++() {++cur;}
-	void operator--() {--cur;}
-	Heap_iterator operator++(int) {return {cur++};}
-	Heap_iterator operator--(int) {return {cur--};}
-	T& operator*() {return **cur;}
-	Iter& operator->() {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
-};
-template <typename Iter>
-struct Heap_const_iterator {
-	using CR = const Heap_const_iterator<Iter>&;
-	using T = typename std::iterator_traits<typename Iter::value_type>::value_type;
-	Iter cur;
-
-	void operator++() {++cur;}
-	void operator--() {--cur;}
-	Heap_const_iterator operator++(int) {return {cur++};}
-	Heap_const_iterator operator--(int) {return {cur--};}
-	T operator*() const {return **cur;}
-	const Iter& operator->() const {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
-};
-
-// for non-PODs, hold pointers to only 1 copy of data
-// pointers are relatively small and easily swappable
-template <typename T, typename Cmp>
-class Heap<T, Cmp, false>{	
-	// in case raw pointer gets swapped out for std::shared_ptr
-	using TP = T*;
-	// hash on the data pointed to
-	struct TP_hash {
-		size_t operator()(const TP& vp) const {
-			return std::hash<T>()(*vp);
-		}
-	};
-	// equality on data pointed to
-	struct TP_equal {
-		bool operator()(const TP& a, const TP& b) const {
-			return *a == *b;
-		}
-	};
-	// default representation is as a vector, index at 1 so need 1 extra element
-	std::vector<TP> elems;
-	// associate each key with an index, hash with value pointed by
-	std::unordered_map<TP, size_t, TP_hash, TP_equal> index;
-	// comparator
-	Cmp cmp;
-	size_t parent(size_t i) {return i >> 1;}
-	size_t left(size_t i) {return i << 1;}
-	size_t right(size_t i) {return (i << 1) + 1;}
-
-	// create only 1 actual copy of the data
-	void push_back(const T& v) {
-		TP actual_value {new T{v}};
-		index[actual_value] = elems.size();
-		elems.push_back(actual_value);
-	}
-	// runs in O(n) time, produces max heap from unordered input array
-	void build_heap() {
-		// second half of elems are leaves, 1 elem is maxheap by default
-		for (size_t i = elems.size() >> 1; i != 0; --i) 
-			heapify(i);
-	}
-	// adjusts elems[i] assuming it's been modified to be smaller than its children
-	// runs in O(lgn) time, floats elems[i] down
-	void heapify(size_t i) {
-		while (true) {
-			size_t l = left(i), r = right(i);
-			size_t largest = i;	
-			// largest of elems[i], elems[l], and elems[r]
-			if (l < elems.size() && cmp(*elems[l], *elems[i]))
-				largest = l;
-			if (r < elems.size() && cmp(*elems[r], *elems[largest]))
-				largest = r;
-			// do until elems[i] is max heap
-			if (largest == i) break;
-			std::swap(elems[i], elems[largest]);
-			std::swap(index[elems[i]], index[elems[largest]]);
-			i = largest;
-		}
-	}
-public:
-	using value_type = T;
-	using iterator = Heap_iterator<typename std::vector<TP>::iterator>;
-	using const_iterator = Heap_const_iterator<typename std::vector<TP>::const_iterator>;
-
-	// construction ------------
-	// O(n) time construction via these constructors (would be O(nlgn) for repeated inserts)
-	Heap(Cmp& c) : elems{nullptr}, cmp(c) {}
-	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
-		elems.reserve(l.size()+1);
-		elems.push_back(nullptr);
-		for (const T& v : l) push_back(v);
-		build_heap();
-	}
-	template <typename Iter>
-	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
-		elems.reserve(end - begin + 1);
-		elems.push_back(nullptr);
-		while (begin != end) {push_back(*begin); ++begin;}
-		build_heap();
-	}
-	~Heap() {for (TP p : elems) delete p;}
-
-	// query ---------------
-	bool empty() const 	{return elems.size() <= 1;}
-	size_t size() const {return elems.size() - 1;}
-	T top() const 		{return *elems[1];}
-	// index of key, 0 means key not found
-	size_t key(const T& k) const {
-		TP kp {&k};
-		auto itr = index.find(kp);
-		return (itr == index.end())? 0 : itr->second;
-	}
-	// for temporary references	
-	size_t key(T&& k) const {
-		TP kp {&k};
-		auto itr = index.find(kp);
-		return (itr == index.end())? 0 : itr->second;
-	}
-
-	// extraction ----------
-	// runs in O(lgn) time due to heapify
-	T extract_top() {
-		// heap underflow
-		if (elems.size() <= 1) return T{}; 
-
-		T top {*elems[1]};
-		std::swap(elems[1],elems.back());
-		index[elems[1]] = 1;
-
-		index.erase(elems.back());
-		delete elems.back();
-		elems.pop_back();
-
-		heapify(1);
-		return top;
-	}
-
-	// modification ----------
-	void insert(const T& key) {
-		push_back(key);
-		check_key(elems.size()-1);
-	}
-	// O(n) like constructor for all elements
-	template <typename Iter>
-	void batch_insert(Iter begin, Iter end) {
-		while (begin != end) {push_back(*begin); ++begin;}
-		build_heap();
-	}
-	// repeadtedly compare against parent
-	void change_key(size_t i, const T& key) {
-		// change should only float up (so only increase on maxheap and decrease on minheap)
-		if (cmp(*elems[i], key)) return;
-		index.erase(elems[i]);
-		delete elems[i];
-
-		elems[i] = new TP{key};
-
-		index[elems[i]] = i;
-
-		while (i > 1 && cmp(elems[i], elems[parent(i)])) {
-			std::swap(elems[i], elems[parent(i)]);
-			std::swap(index[elems[i]], index[elems[parent(i)]]);
-			i = parent(i);
-		}
-	}
-	void change_val(const T& old, const T& changed) {
-		change_key(key(old), changed);
-	}
-	// float value up if its value was changed indirectly (through comparator)
-	void check_key(size_t i) {
-		while (i > 1 && cmp(*elems[i], *elems[parent(i)])) {
-			std::swap(elems[i], elems[parent(i)]);
-			std::swap(index[elems[i]], index[elems[parent(i)]]);
-			i = parent(i);
-		}		
-	}
-
-	// iteration -------------
-	iterator begin() {return {elems.begin() + 1};}
-	iterator end() 	 {return {elems.end()};}
-	const_iterator begin() const {return {elems.begin() + 1};}
-	const_iterator end() const 	 {return {elems.end()};}
-
-	// bool is_maxheap() const {return std::is_heap(elems.begin()+1, elems.end(), cmp);}
-	// bool is_minheap() const {return std::is_heap(elems.rbegin(), elems.rend()-1, cmp);}
-	bool correct_index() const {
-		for (auto itr : index) if (itr.first != elems[itr.second])
-			return false;
-		return true;
-	}
-};
 
 }
 
