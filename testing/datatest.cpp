@@ -29,8 +29,14 @@ void test_mul(bool print) {
 	sal::Matrix<int> B {{-1, 1},
 				  		{5, -2},
 				   		{4, 2}};
-	if (A*B != sal::Matrix<int>{{47, 4},{5,-11},{33,-9}}) 
+	if (print) {
+		cout << B << endl;
+		cout << B.transpose() << endl;
+	}
+	if (A*B != sal::Matrix<int>{{47, 4},{5,-11},{33,-9}}) {
+		cout << A*B << endl;
 		cout << "FAILED...Matrix multiplication\n";
+	}
 	
 }
 
@@ -46,6 +52,15 @@ void test_heap(bool print) {
 	if (print) sal::print(h2);
 	if (!h2.is_maxheap()) cout << "FAILED...Heap construction\n";
 	if (h2.key(12) != 1 || h2.key(11) != 3) cout << "FAILED...Heap find key\n";
+
+	sal::Heap<int> h3 {13,1,3,4,5,2,3,4,5,1,7};
+	if (print) sal::print(h3);
+	if (!h3.is_maxheap()) cout << "FAILED...Heap construction\n";
+	if (print) {
+		while (!h3.empty()) cout << h3.extract_top() << ' ';
+		cout << '\n';
+	}
+
 
 	std::make_heap(h2.begin(), h2.end());
 	if (print) sal::print(h2);
@@ -391,25 +406,25 @@ int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	test_heap(print);
-	test_tree(print);
-	test_order_tree(print);
-	test_interval_set(print);
-	test_treap(print);
-	test_list(print);
-	test_undirected_graph(print);
-	test_directed_graph(print);
+	// test_heap(print);
+	// test_tree(print);
+	// test_order_tree(print);
+	// test_interval_set(print);
+	// test_treap(print);
+	// test_list(print);
+	// test_undirected_graph(print);
+	// test_directed_graph(print);
 	test_matrix(print);
-	test_bfs(print);
-	test_dfs(print);
-	test_topological_sort(print);
-	test_transpose(print);
-	test_strongly_connected(print);
-	test_mst(print);
-	test_bellman_ford(print);
-	test_shortest_dag(print);
-	test_dijkstra(print);
-	test_difference_constraint(print);
+	// test_bfs(print);
+	// test_dfs(print);
+	// test_topological_sort(print);
+	// test_transpose(print);
+	// test_strongly_connected(print);
+	// test_mst(print);
+	// test_bellman_ford(print);
+	// test_shortest_dag(print);
+	// test_dijkstra(print);
+	// test_difference_constraint(print);
 
-	test_adjacency_matrix(print);
+	// test_adjacency_matrix(print);
 }
