@@ -23,17 +23,16 @@ class Heap {
 public:
 	// only exposing due to occasionaly indirect value changes
 	// float value up for directly changed value
-	void sift_up(size_t i, const T& item) {
-		while (i > 1 && cmp(item, elems[parent(i)])) {
-			elems[i] = elems[parent(i)];
-			i = parent(i);
+	void sift_up(size_t hole, T&& item) {
+		while (hole > 1 && cmp(item, elems[parent(hole)])) {
+			elems[hole] = elems[parent(hole)];
+			hole = parent(hole);
 		}		
-		elems[i] = item;
+		elems[hole] = std::move(item);
 	}
 	// float value up if its value was changed indirectly (through comparator)
-	void sift_up(size_t i) {
-		const T& prev_val {elems[i]};
-		sift_up(i, prev_val);
+	void sift_up(size_t hole) {
+		sift_up(hole, std::move(elems[hole]));
 	}
 	// adjusts elems[i] assuming it's been modified to be smaller than its children
 	// runs in O(lgn) time, floats elems[i] down
@@ -41,7 +40,7 @@ public:
 		T item {std::move(elems[hole])};
 		size_t child {left(hole)};
 		while (child < elems.size()) {
-			if (child + 1 < elems.size() && cmp(elems[child + 1], elems[child]))
+			if (child+1 < elems.size() && cmp(elems[child + 1], elems[child]))
 				++child;
 			if (cmp(elems[child], item)) {
 				elems[hole] = std::move(elems[child]);
@@ -122,7 +121,7 @@ public:
 
 		size_t hole {1};
 		size_t child {2};
-		while (child+1 < elems.size()) {
+		while (child + 1 < elems.size()) {
 			if (cmp(elems[child + 1], elems[child])) 
 				++child;
 			elems[hole] = elems[child];
@@ -130,9 +129,8 @@ public:
 			child = left(child);
 		}
 		// replace hole with rightmost leaf
-		elems[hole] = elems[tail()];
+		sift_up(hole, std::move(elems.back()));
 		elems.pop_back();
-		sift_up(hole, elems[hole]);
 		return top;
 	}
 	// gets top while inserting a new element, same complexity as extracting top

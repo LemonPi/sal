@@ -9,17 +9,23 @@
 #include "../algo/utility.h"	// Rand int
 #include "../algo/macros.h"		// POS_INF
 
-using namespace std;
 
 namespace sal {
 
+using namespace std;
+
 template <typename T>
 class Matrix {
+
+
 	vector<T> elems;
 	size_t rows, cols;
 
 	void rotate_copy();
 public:
+	using iterator = typename vector<T>::iterator;
+	using const_iterator = typename vector<T>::const_iterator;
+	// core methods
 	Matrix() : rows{0}, cols{0} {};
 	Matrix(size_t r, size_t c, T d = 0) : elems(r*c, d), rows{r}, cols{c}  {}	// default init to 0
 	Matrix(size_t r, size_t c, vector<T>&& e) : elems{std::move(e)}, rows{r}, cols{c}  {}
@@ -36,12 +42,41 @@ public:
 		elems = move(a.elems);
 		return *this;
 	}
+
+	// essential operators
+	Matrix<T>& operator*=(T);
+	Matrix<T>& operator*=(const Matrix&);
+	Matrix<T>& operator+=(const Matrix&);
+	Matrix<T>& operator-=(const Matrix&);
+	Matrix<T>& pow(size_t exponent);
+
+	bool operator==(const Matrix&) const;
+
+	iterator operator[](size_t r) {return begin(elems) + r*cols;}
+	const_iterator operator[](size_t r) const {return begin(elems) + r*cols;}
+
+
+	// accessors ----------
 	size_t row() const { return rows; }
 	size_t col() const { return cols; }
+	T& get(size_t row, size_t col) { return elems[row*cols + col]; }
+	const T& get(size_t row, size_t col) const {return elems[row*cols + col]; }
 
-	void resize_rows(size_t new_rows, T def = 0) {
-		elems.resize(new_rows, def);
+	// manipulators -------
+	Matrix<T> transpose() const {	// create a copy of itself that is the transpose
+		vector<T> elems_t;
+		elems_t.reserve(rows*cols);
+		for (size_t i = 0; i < cols; ++i)
+			for (size_t j = 0; j < rows; ++j) 
+				elems_t.push_back(get(j, i));
+		return Matrix<T>{cols, rows, std::move(elems_t)};
 	}
+
+	// modifiers ----------
+	// can just extend depth
+	void rotate(); // clockwise
+	void clear_zero();
+	void resize_rows(size_t new_rows, T def = 0) {elems.resize(new_rows, def);}
 
 	void resize(size_t new_rows, size_t new_cols, T def = 0) {
 		// simply resize elems
@@ -62,14 +97,6 @@ public:
 	}
 
 
-	T& get(size_t row, size_t col) { return elems[row*cols + col]; }
-	const T& get (size_t row, size_t col) const {return elems[row*cols + col]; }
-
-	void rotate(); // clockwise
-
-	void clear_zero();
-
-	void print() const {std::cout << *this;}
 
 	// convenient row and col operations
 	template <typename Op>
@@ -84,36 +111,18 @@ public:
 			op(res, elems[row*cols + col]);
 		return res;
 	}
-	T row_sum(size_t row) const {
-		row_op(row, [](T& res, const T& elem){res += elem;}, 0);
-	}
-	T col_sum(size_t col) const {
-		col_op(col, [](T& res, const T& elem){res += elem;}, 0);
-	}
-	T row_prod(size_t row) const {
-		row_op(row, [](T& res, const T& elem){res *= elem;}, 0);
-	}
-	T col_prod(size_t col) const {
-		col_op(col, [](T& res, const T& elem){res *= elem;}, 0);
-	}	
 
-	// essential operators
-	Matrix<T>& operator*=(T);
-	Matrix<T>& operator*=(const Matrix&);
-	Matrix<T>& operator+=(const Matrix&);
-	Matrix<T>& operator-=(const Matrix&);
-	Matrix<T>& pow(size_t exponent);
 
-	bool operator==(const Matrix&) const;
 
 	template <typename TT>
 	friend ostream& operator<<(ostream&, const Matrix<TT>&);
+	void print() const {std::cout << *this;}
 };
 // creation of matrices
 template <typename T>
 Matrix<T> identity(size_t size) {
 	vector<T> elems(size*size, 0);
-	Matrix<T> id {size, size, move(elems)};
+	Matrix<T> id {size, size, std::move(elems)};
 	for (size_t i = 0; i < size; ++i) {
 		id.get(i,i) = 1;
 	}
@@ -179,8 +188,8 @@ void Matrix<T>::rotate_copy() {	// clockwise
 
 template <typename T>
 void Matrix<T>::clear_zero() {
-	set<size_t> rows_to_clear;
-	set<size_t> cols_to_clear;
+	std::set<size_t> rows_to_clear;
+	std::set<size_t> cols_to_clear;
 	for (size_t i = 0; i < rows; ++i) {
 		for (size_t j = 0; j < cols; ++j) {
 			if (elems[i*cols + j] == 0) {
@@ -206,6 +215,11 @@ template <typename T>
 Matrix<T>& Matrix<T>::operator*=(const Matrix& a) {
 	// m x n times n x p --> m x p
 	if (cols != a.rows) throw runtime_error("Invalid dimensions for matrix multiplication");
+	// an optimization that can lead to 4x speed up is to multiply by the transpose
+	// this way the inner loop can be sequential rather than jumping down rows
+	auto a_transpose = a.transpose();
+
+
 	vector<T> newelems;
 	newelems.reserve(rows*a.cols);
 	// naive O(n^3) algorithm, which works well for small matrices
@@ -213,7 +227,7 @@ Matrix<T>& Matrix<T>::operator*=(const Matrix& a) {
 		for (size_t j = 0; j < a.cols; ++j) {
 			T elem {0};
 			for (size_t k = 0; k < cols; ++k) {
-				elem += get(i, k) * a.get(k, j);
+				elem += get(i, k) * a_transpose.get(j, k);
 			}
 			newelems.push_back(elem);
 		}
@@ -294,6 +308,23 @@ ostream& operator<<(ostream& os, const Matrix<T>& m) {
 	}
 	return os;
 }
+
+template <typename T>
+T row_sum(const Matrix<T>& mat, size_t row) {
+	return mat.row_op(row, [](T& res, const T& elem){res += elem;}, 0);
+}
+template <typename T>
+T col_sum(const Matrix<T>& mat, size_t col) {
+	return mat.col_op(col, [](T& res, const T& elem){res += elem;}, 0);
+}
+template <typename T>
+T row_prod(const Matrix<T>& mat, size_t row) {
+	return mat.row_op(row, [](T& res, const T& elem){res *= elem;}, 0);
+}
+template <typename T>
+T col_prod(const Matrix<T>& mat, size_t col) {
+	return mat.col_op(col, [](T& res, const T& elem){res *= elem;}, 0);
+}	
 
 
 }
