@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdlib>
 
 namespace sal {
@@ -22,15 +23,15 @@ class Persistent_vector {
 	}
 
 	void destroy() {
-		if (elems) delete[] elems;
+		if (elems) free(elems);
 	}
 public:
 	using iterator = T*;
-	using const_iterator = T* const;
+	using const_iterator = const T*;
 	// core functions
 	Persistent_vector() : elems{nullptr}, size_{0}, capacity_{0} {}
-	Persistent_vector(size_t s) : elems{new T[s]}, size_{0}, capacity_{s} {}
-	Persistent_vector(const Persistent_vector& pv) : elems{new T[pv.size_]}, size_{pv.size_}, capacity_{pv.capacity_} {
+	Persistent_vector(size_t s) : elems{static_cast<T*>(malloc(s * sizeof(T)))}, size_{0}, capacity_{s} {}
+	Persistent_vector(const Persistent_vector& pv) : elems{static_cast<T*>(malloc(pv.size_ * sizeof(T)))}, size_{pv.size_}, capacity_{pv.capacity_} {
 		memcpy(elems, pv.elems, size_ * sizeof(T));
 	}
 	Persistent_vector(Persistent_vector&& pv) : elems{pv.elems}, size_{pv.size_}, capacity_{pv.capacity_} {pv.elems = nullptr; pv.size_ = 0;}
@@ -39,7 +40,7 @@ public:
 			destroy();
 			size_ = pv.size_;
 			capacity_ = pv.capacity_;
-			elems = new T[size_];
+			elems = static_cast<T*>(malloc(size_ * sizeof(T)));
 			memcpy(elems, pv.elems, size_ * sizeof(T));
 		}
 	}
@@ -81,6 +82,7 @@ public:
 	const_iterator end() const {return elems + size_;}
 
 	// resizing and clearing, don't actually remove elements, just make them inaccessible in iteration
+	// calling realloc with a smaller size will free the tail, so only do it if it grows tail
 	void reserve(size_t s) {
 		if (s > capacity_) {elems = realloc(elems, s * sizeof(T)); capacity_ = s;}
 	}
@@ -88,6 +90,13 @@ public:
 		reserve(s);
 		size_ = s;
 	}
+	void resize(size_t s, const T& def) {	// fill space with default value padding
+		reserve(s);
+		while (size_ < s) {
+			elems[size_] = def;
+			++size_;
+		}
+	}	
 	void clear() {size_ = 0;}	// does not actually remove elements
 
 };
@@ -102,15 +111,15 @@ class Fixed_vector {
 	size_t size_;	// actual size_
 
 	void destroy() {
-		if (elems) delete[] elems;
+		if (elems) free(elems);
 	}
 public:
 	using iterator = T*;
-	using const_iterator = T* const;
+	using const_iterator = const T*;
 	// core functions
 	Fixed_vector() : elems{nullptr}, size_{0} {}
-	Fixed_vector(size_t s) : elems{new T[s]}, size_{0} {}
-	Fixed_vector(const Fixed_vector& pv) : elems{new T[pv.size_]}, size_{pv.size_} {
+	Fixed_vector(size_t s) : elems{static_cast<T*>(malloc(s * sizeof(T)))}, size_{0} {}
+	Fixed_vector(const Fixed_vector& pv) : elems{static_cast<T*>(malloc(pv.size_ * sizeof(T)))}, size_{pv.size_} {
 		memcpy(elems, pv.elems, size_ * sizeof(T));
 	}
 	Fixed_vector(Fixed_vector&& pv) : elems{pv.elems}, size_{pv.size_} {pv.elems = nullptr; pv.size_ = 0;}
@@ -118,7 +127,7 @@ public:
 		if (pv.elems != elems) {
 			destroy();
 			size_ = pv.size_;
-			elems = new T[size_];
+			elems = static_cast<T*>(malloc(size_ * sizeof(T)));
 			memcpy(elems, pv.elems, size_ * sizeof(T));
 		}
 	}
@@ -157,11 +166,18 @@ public:
 
 	// resizing and clearing, don't actually remove elements, just make them inaccessible in iteration
 	void reserve(size_t s) {
-		elems = static_cast<T*>(realloc(elems, s * sizeof(T)));
+		if (s > size_) elems = static_cast<T*>(realloc(elems, s * sizeof(T)));
 	}
 	void resize(size_t s) {	// no testing for safety; living on the egde...
 		reserve(s);
 		size_ = s;
+	}
+	void resize(size_t s, const T& def) {	// fill space with default value padding
+		reserve(s);
+		while (size_ < s) {
+			elems[size_] = def;
+			++size_;
+		}
 	}
 	void clear() {size_ = 0;}	// does not actually remove elements
 

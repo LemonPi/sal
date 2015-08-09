@@ -432,6 +432,16 @@ void test_vector(bool print) {
 		if (stdvec[i] != fixedvec[i])
 			PRINTLINE("FAILED...Sorted element different for stdvec and fixed " << stdvec[i] << ' ' << fixedvec[i]);
 	}
+
+	// efficient clear and resize
+	fixedvec.clear();
+	for (int i = 30; i != 0; --i) fixedvec.push_back(i);
+	if (print) sal::print(fixedvec);
+
+	fixedvec.resize(50, 0);
+	if (print) sal::print(fixedvec);
+
+	if (print) PRINTLINE("FINISHED testing vectors");
 }
 
 int main(int argc, char** argv) {
