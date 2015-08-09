@@ -15,7 +15,8 @@ class Persistent_vector {
 
 	void grow_if_full() {
 		if (size_ == capacity_) {
-			capacity_ *= 2;
+			if (!capacity_) capacity = 8;
+			else capacity_ *= 2;
 			elems = static_cast<T*>(realloc(elems, capacity_ * sizeof(T)));
 		}
 	}

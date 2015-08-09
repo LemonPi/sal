@@ -13,6 +13,7 @@
 #include "../graph/utility.h"
 #include "../graph/shortest.h"
 #include "../graph/linear.h"
+#include "../vector.h"
 
 using namespace std;
 
@@ -402,6 +403,37 @@ void test_adjacency_matrix(bool print) {
 	if (print) std:: cout << h;
 }
 
+void test_vector(bool print) {
+	std::vector<int> stdvec;
+	sal::Persistent_vector<int> persvec;
+	sal::Fixed_vector<int> fixedvec;
+	fixedvec.reserve(100);
+	for (int i = 100; i != 0; --i) {
+		stdvec.push_back(i);
+		persvec.push_back(i);
+		fixedvec.push_back(i);
+	}
+	if (stdvec.size() != persvec.size())
+		PRINTLINE("FAILED...Size of stdvec and persistent vector different after populating " << stdvec.size() << ' ' << persvec.size());
+	if (stdvec.size() != persvec.size())
+		PRINTLINE("FAILED...Size of stdvec and fixed vector different after populating " << stdvec.size() << ' ' << fixedvec.size());
+
+	std::sort(begin(stdvec), end(stdvec));
+	std::sort(begin(persvec), end(persvec));
+	std::sort(begin(fixedvec), end(fixedvec));
+	if (print) {
+		cout << "stdvec: "; sal::print(stdvec);
+		cout << "persvec: "; sal::print(persvec);
+		cout << "fixedvec: "; sal::print(fixedvec);
+	}
+	for (int i = 0; i < 100; ++i) {
+		if (stdvec[i] != persvec[i])
+			PRINTLINE("FAILED...Sorted element different for stdvec and persvec " << stdvec[i] << ' ' << persvec[i]);
+		if (stdvec[i] != fixedvec[i])
+			PRINTLINE("FAILED...Sorted element different for stdvec and fixed " << stdvec[i] << ' ' << fixedvec[i]);
+	}
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
@@ -414,7 +446,7 @@ int main(int argc, char** argv) {
 	// test_list(print);
 	// test_undirected_graph(print);
 	// test_directed_graph(print);
-	test_matrix(print);
+	// test_matrix(print);
 	// test_bfs(print);
 	// test_dfs(print);
 	// test_topological_sort(print);
@@ -425,6 +457,6 @@ int main(int argc, char** argv) {
 	// test_shortest_dag(print);
 	// test_dijkstra(print);
 	// test_difference_constraint(print);
-
 	// test_adjacency_matrix(print);
+	test_vector(print);
 }
