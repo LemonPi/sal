@@ -68,6 +68,7 @@ public:
 	}
 
 	// query and retrieval
+	bool empty() const {return size_ == 0;}
 	size_t size() const {return size_;}
 	size_t capacity() const {return capacity_;}
 	const T& operator[](size_t i) const {return elems[i];}
@@ -91,7 +92,7 @@ public:
 
 };
 
-// a vector that does not grow when used with push_back, just a simple wrapper
+// a persistent vector that does not grow when used with push_back, just a simple wrapper
 // 1.8 times faster than std vector at initialization, 2 times faster at emplace back, and 1.3 times faster at iteration
 // same speed for other operations
 // again, not very secure! (barely better than a raw array), but use when the situation is very regular
@@ -143,6 +144,7 @@ public:
 	}
 
 	// query and retrieval
+	bool empty() const {return size_ == 0;}
 	size_t size() const {return size_;}
 	const T& operator[](size_t i) const {return elems[i];}
 	T& operator[](size_t i) {return elems[i];}
