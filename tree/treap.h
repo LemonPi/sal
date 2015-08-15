@@ -18,20 +18,23 @@ protected:
 
 	// treap specific methods
 	void heap_fix_up(NP node) {
+		// climb up via rotations until priority's max-heap property is fulfilled
 		while (node != root && node->priority < node->parent->priority) {
-			if (node == node->parent->left) rotate_right(node->parent);
+			if (is_left_child(node)) rotate_right(node->parent);
 			else rotate_left(node->parent);
 		}
 	}
-	void treap_insert(NP node) {
-		tree_insert(root, node);
+	template <typename Op>
+	void treap_insert(NP node, Op&& fixup) {
+		tree_insert(root, node, fixup);
 		heap_fix_up(node);
 	}
-	virtual void treap_delete(NP node) {
+	template <typename Op>
+	void treap_delete(NP node, Op&& fixup) {
 		// 4 cases based on the children of node
 		// either no children or just one child
-		if 		(node->left == Node::nil) transplant(node, node->right);
-		else if (node->right == Node::nil) transplant(node, node->left);
+		if 		(node->left == Node::nil) transplant(node, node->right);	// no left child, become right child
+		else if (node->right == Node::nil) transplant(node, node->left);	// no right child, become left child
 		// else both children, find successor in right subtree
 		else {
 			NP successor {tree_min(node->right)};
@@ -50,14 +53,35 @@ protected:
 				else rotate_left(successor);
 			}
 		}
+		fixup(node);
 		delete node;
 	}
 
 	// core treap utilities
-	// rotations to preserve RB properties
+	// rotations to balance tree
 	/* rotate left shifts everything left s.t. 
 	   it becomes the left child of its original right child
-	   its right child is replaced by its right child's left child
+	   its right child is replaced by its original right child's left child
+	             A <--
+	            / \   |
+	           /   \  |
+	          B     C
+	         / \   / \
+	        /   \ /   \
+	       D    E F    G
+				
+		rotate_left(A) transforms into
+
+				 C
+				/ \
+			   /   \
+			  A     G
+			 / \
+			/   \
+		   B     F
+		  / \
+		 /   \
+		D     E
 	*/
 	virtual void rotate_left(NP node) {
 		NP child {node->right};
@@ -67,7 +91,7 @@ protected:
 
 		child->parent = node->parent;
 		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
+		else if (is_left_child(node)) node->parent->left = child;
 		else node->parent->right = child;
 
 		child->left = node;
@@ -82,16 +106,18 @@ protected:
 
 		child->parent = node->parent;
 		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
+		else if (is_left_child(node)) node->parent->left = child;
 		else node->parent->right = child;
 
 		child->right = node;
 		node->parent = child;	
 	}
 	// cannot do a simple tree_find for insert since parent has to be updated
-	virtual void tree_insert(NP start, NP node) {
+	template <typename Op>
+	void tree_insert(NP start, NP node, Op&& fixup) {
 		NP parent {Node::nil};
 		while (start != Node::nil) {
+			fixup(start, node);
 			parent = start;
 			if (node->key < start->key) start = start->left;
 			else start = start->right;
@@ -104,12 +130,15 @@ protected:
 
 	// moves one subtree to replace another one
 	void transplant(NP old, NP moved) {
+		// move moved into old's position in the tree without deleting any trees
+		// no parent must mean that old is root or nil itself
 		if (old->parent == Node::nil) root = moved;
-		else if (old == old->parent->left) old->parent->left = moved;
+		// old is a left child
+		else if (is_left_child(old)) old->parent->left = moved;
 		else old->parent->right = moved;
-		// can assign to parent unconditionally due to sentinel
+		// can assign to parent unconditionally due to sentinel (we know it's not nullptr)
 		moved->parent = old->parent;
-		// updating moved's children is up to the caller
+		// updating moved's children and erasing old is up to the caller
 	}
 
 public:
@@ -126,12 +155,12 @@ public:
 	// modifiers
 	void insert(const T& data) {
 		NP node {new Node(data)};
-		treap_insert(node);
+		treap_insert(node, [](const Node*, const Node*){});
 	};
 
 	void erase(const T& data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) treap_delete(node);
+		if (node != Node::nil) treap_delete(node, [](const Node*){});
 	}
 	void clear() {
 		postorder_walk(root, [](NP node){delete node;});
@@ -139,7 +168,7 @@ public:
 	}
 
 	// query
-	iterator find_and_elevante(const T& key) {
+	iterator find_and_elevate(const T& key) {
 		NP found {tree_find(root, key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
@@ -157,6 +186,16 @@ public:
 		NP found {tree_find(root,key)};
 		return const_iterator{found};
 	}	
+	// with hints / starting points
+	iterator find(const T& key, const_iterator hint) {
+		NP found {tree_find(hint.get(),key)};
+		return iterator{found};
+	}	
+	const_iterator find(const T& key, const_iterator hint) const {
+		NP found {tree_find(hint.get(),key)};
+		return const_iterator{found};
+	}
+
 	size_t size() const {
 		size_t num_elems {0};
 		inorder_walk(root, [&](const Node* node){++num_elems;});

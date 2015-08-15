@@ -155,9 +155,19 @@ void test_treap(bool print) {
 
 void test_interval_set(bool print) {
 	sal::Interval_set<int> t {{16,21}, {8,9}, {5,8}, {15,23}, {25,30}, {0, 3}, {6, 10}, {17,19}, {26,26}, {19,20}};
+	if (t.size() != 10) cout << "FAILED...Interval set size\n";
 
-	auto interval = t.find({22, 25});
-	if (*interval.get() != sal::Interval<int>{15,23}) cout << "FAILED...Interval set find\n";
+
+	// only [26,26] in range (make sure there is only 1 correct answer)
+	auto interval = t.find({26,27});
+	if (*interval.get() != sal::Interval<int>{26,26}) cout << "FAILED...Interval set find\n";
+	interval = t.find(2,4);
+	if (*interval.get() != sal::Interval<int>{0,3}) cout << "FAILED...Interval set find\n";
+	interval = t.find_first(20, 27);	// [15,23],[16,21],[19,20],[22,25],[25,30],[26,26]
+	if (*interval.get() != sal::Interval<int>{15,23}) cout << "FAILED...Interval set find first\n";
+
+	interval = t.find_exact(17,19);
+	if (*interval.get() != sal::Interval<int>{17,19}) cout << "FAILED...Interval set find exact\n";
 
 	interval = t.find(11, 14);
 	if (interval != t.end()) cout << "FAILED...Interval set find\n";
@@ -168,7 +178,7 @@ void test_interval_set(bool print) {
 	interval = tt.find_first(1, 4);
 	if (print) cout << interval << endl;
 	auto all_intervals = tt.find_all(1, 4);
-	if (print) sal::print(all_intervals);
+	if (all_intervals.size() != 2) cout << "FAILED...Interval set find all\n";
 }
 
 void test_undirected_graph(bool print) {
@@ -458,25 +468,25 @@ int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	// test_heap(print);
-	// test_tree(print);
-	// test_order_tree(print);
-	// test_interval_set(print);
+	test_heap(print);
+	test_tree(print);
+	test_order_tree(print);
+	test_interval_set(print);
 	test_treap(print);
-	// test_list(print);
-	// test_undirected_graph(print);
-	// test_directed_graph(print);
-	// test_matrix(print);
-	// test_bfs(print);
-	// test_dfs(print);
-	// test_topological_sort(print);
-	// test_transpose(print);
-	// test_strongly_connected(print);
-	// test_mst(print);
-	// test_bellman_ford(print);
-	// test_shortest_dag(print);
-	// test_dijkstra(print);
-	// test_difference_constraint(print);
-	// test_adjacency_matrix(print);
-	// test_vector(print);
+	test_list(print);
+	test_undirected_graph(print);
+	test_directed_graph(print);
+	test_matrix(print);
+	test_bfs(print);
+	test_dfs(print);
+	test_topological_sort(print);
+	test_transpose(print);
+	test_strongly_connected(print);
+	test_mst(print);
+	test_bellman_ford(print);
+	test_shortest_dag(print);
+	test_dijkstra(print);
+	test_difference_constraint(print);
+	test_adjacency_matrix(print);
+	test_vector(print);
 }

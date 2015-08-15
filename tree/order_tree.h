@@ -54,56 +54,15 @@ class Order_augment : public Tree<Node> {
 	}
 
 	// rb operations modified for order statistics
-	virtual void tree_insert(NP start, NP node) override {
-		NP parent {Node::nil};
-		while (start != Node::nil) {
-			++start->size;	// simply increment size of each ancestor going down
-			parent = start;
-			if (node->key < start->key) start = start->left;
-			else start = start->right;
-		}
-		node->parent = parent;
-		if (parent == Node::nil) root = node;
-		else if (node->key < parent->key) parent->left = node;
-		else parent->right = node;
+	static void grow_subtree_size(Node* start, const Node*) {
+		++start->size; // simply increment size of each ancestor going down
 	}
-
-	virtual void rb_delete(NP node) override {
-		NP moved {node};
-		NP successor;
-		Color moved_original_color {moved->color};
-		if (node->left == Node::nil) {
-			successor = node->right;
-			transplant(node, node->right);
-		}
-		else if (node->right == Node::nil) {
-			successor = node->left;
-			transplant(node, node->left);
-		}
-		else {
-			moved = tree_min(node->right);
-			moved_original_color = moved->color;
-			successor = moved->right;
-			if (moved->parent == node) successor->parent = moved;
-			else {
-				transplant(moved, moved->right);
-				moved->right = node->right;
-				moved->right->parent = moved;
-			}
-
-			transplant(node, moved);
-			moved->left = node->left;
-			moved->left->parent = moved;
-			moved->color = node->color;
-		}
-		// decrement size of ancestors of moved
+	static void update_ancestor_size(Node* moved) {
 		moved = moved->parent;
 		while (moved != Node::nil) {
 			--moved->size;
 			moved = moved->parent;
-		}
-		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
-		delete node;
+		}		
 	}
 
 	// rotations, augmented by changing child and node's sizes
@@ -150,14 +109,14 @@ public:
 		for (const auto& v : l) insert(v);
 	}
 
-	void insert(T data) {
+	void insert(const T& data) {
 		NP node {new Node(data)};
-		rb_insert(node);
+		rb_insert(node, grow_subtree_size);
 	};
 
-	void erase(T data) {
+	void erase(const T& data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) rb_delete(node);
+		if (node != Node::nil) rb_delete(node, update_ancestor_size);
 	}
 
 	// order statistics methods interface

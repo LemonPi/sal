@@ -21,7 +21,6 @@ Node* tree_find(Node* start, const typename Node::key_type& key) {
 	}
 	return start;
 }
-
 template <typename Node>
 Node* tree_min(Node* start) {
 	while (start->left != Node::nil) start = start->left;
@@ -32,6 +31,26 @@ Node* tree_max(Node* start) {
 	while (start->right != Node::nil) start = start->right;
 	return start;
 }
+// const versions
+template <typename Node>
+const Node* tree_find(const Node* start, const typename Node::key_type& key) {
+	while (start != Node::nil && start->key != key) {
+		if (key < start->key) start = start->left;
+		else start = start->right;
+	}
+	return start;
+}
+template <typename Node>
+const Node* tree_min(const Node* start) {
+	while (start->left != Node::nil) start = start->left;
+	return start;
+}
+template <typename Node>
+const Node* tree_max(const Node* start) {
+	while (start->right != Node::nil) start = start->right;
+	return start;
+}
+
 
 // successor is node with smallest key greater than start
 template <typename Node>
@@ -56,7 +75,15 @@ Node* tree_predecessor(const Node* start) {
 	}
 	return parent;
 }
-
+// convenient and semantically clear functions
+template <typename Node>
+bool is_left_child(const Node* node) {
+	return node == node->parent->left;
+}
+template <typename Node>
+bool is_right_child(const Node* node) {
+	return node == node->parent->right;
+}
 
 // BST traversals
 template <typename Node, typename Op>
@@ -129,8 +156,8 @@ struct Tree_adj_iterator {
 
 	pointer cur;
 
-	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
-	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
+	void operator++() {if (is_left_child(cur)) cur = cur->parent->right; else cur = Node::nil;}
+	void operator--() {if (is_right_child(cur)) cur = cur->parent->left; else cur = Node::nil;}
 	key_type& operator*() {return cur->key;}
 	pointer operator->() {return cur;}
 	pointer get() 		{return cur;}
@@ -147,8 +174,8 @@ struct Tree_adj_const_iterator {
 
 	const_pointer cur;
 
-	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
-	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
+	void operator++() {if (is_left_child(cur)) cur = cur->parent->right; else cur = Node::nil;}
+	void operator--() {if (is_right_child(cur)) cur = cur->parent->left; else cur = Node::nil;}
 	const key_type& operator*() const {return cur->key;}
 	const_pointer operator->() const {return cur;}
 	const_pointer get() const {return cur;}
@@ -226,7 +253,7 @@ protected:
 
 		child->parent = node->parent;
 		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
+		else if (is_left_child(node)) node->parent->left = child;
 		else node->parent->right = child;
 
 		child->left = node;
@@ -241,16 +268,19 @@ protected:
 
 		child->parent = node->parent;
 		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
+		else if (is_left_child(node)) node->parent->left = child;
 		else node->parent->right = child;
 
 		child->right = node;
 		node->parent = child;	
 	}
 	// cannot do a simple tree_find for insert since parent has to be updated
-	virtual void tree_insert(NP start, NP node) {
+	template <typename Op>
+	void tree_insert(NP start, NP node, Op&& fixup) {
 		NP parent {Node::nil};
 		while (start != Node::nil) {
+			// keep track of augmented data
+			fixup(start, node);
 			parent = start;
 			if (node->key < start->key) start = start->left;
 			else start = start->right;
@@ -261,8 +291,9 @@ protected:
 		else parent->right = node;
 	}
 	// assume node is colored RED
-	void rb_insert(NP node) {
-		tree_insert(root, node);
+	template <typename Op>
+	void rb_insert(NP node, Op&& fixup) {
+		tree_insert(root, node, std::forward<Op>(fixup));
 		rb_insert_fixup(node);
 	}
 	void rb_insert_fixup(NP node) {
@@ -270,7 +301,7 @@ protected:
 		while (node->parent->color == Color::RED) {
 			NP parent {node->parent};
 			// grandparent is black since parent is red
-			if (parent == parent->parent->left) {
+			if (is_left_child(parent)) {
 				NP uncle {parent->parent->right};
 				// case 1, simply recolor so parents and uncle are black while grandparent red
 				if (uncle->color == Color::RED) {
@@ -318,7 +349,8 @@ protected:
 		root->color = Color::BLACK;
 	}
 
-	virtual void rb_delete(NP node) {
+	template <typename Op>
+	void rb_delete(NP node, Op&& fixup) {
 		// successor replaces the moved node
 		// moved either has 1 or no children
 		NP moved {node};
@@ -353,7 +385,8 @@ protected:
 			moved->left->parent = moved;
 			moved->color = node->color;
 		}
-
+		// additional fixup to restore augmented data
+		fixup(moved);
 		// possible violation if a black node was moved
 		if (moved_original_color == Color::BLACK) rb_delete_fixup(successor);
 		delete node;
@@ -434,7 +467,7 @@ protected:
 	// moves one subtree to replace another one
 	void transplant(NP old, NP moved) {
 		if (old->parent == Node::nil) root = moved;
-		else if (old == old->parent->left) old->parent->left = moved;
+		else if (is_left_child(old)) old->parent->left = moved;
 		else old->parent->right = moved;
 		// can assign to parent unconditionally due to sentinel
 		moved->parent = old->parent;
@@ -489,7 +522,7 @@ public:
 	// modifiers (non-virtual)
 	void insert(T data) {
 		NP node {new Node(data)};
-		rb_insert(node);
+		rb_insert(node, [](const Node*, const Node*){});	// no additional work (useful only for augments)
 	}
 	template <typename...Args>
 	void emplace(Args&&... args) {
@@ -498,7 +531,7 @@ public:
 	}
 	void erase(T data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) rb_delete(node);
+		if (node != Node::nil) rb_delete(node, [](const Node*){});	// no additional work (useful only for augments)
 	}
 	void clear() {
 		postorder_walk(root, [](NP node){delete node;});

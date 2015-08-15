@@ -167,9 +167,42 @@ void profile_interval_set() {
 		int width {2*i};
 		interval_set.insert({low, low + width});
 	}
-	cout << "random interval insert: " << time.tonow() / 1000.0 << endl;
-	interval_set.print();
+	cout << "sequential interval insert: " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (int i = 0; i < test_size; ++i) {
+		int low {i};
+		int width {10};
+		interval_set.find(low, low + width);
+	}
+	cout << "sequential find any overlapping: " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (int i = 0; i < test_size; ++i) {
+		int low {i};
+		int width {10};
+		interval_set.find_first(low, low + width);
+	}
+	cout << "sequential find smallest overlapping: " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (int i = 0; i < test_size; ++i) {
+		int low {i};
+		int width {2*i};
+		interval_set.find_exact(low, low + width);
+	}
+	cout << "sequential find exact interval: " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (int i = 0; i < test_size; ++i) {
+		int low {i};
+		int width {2*i};
+		interval_set.erase({low, low + width});
+	}
+	cout << "sequential erase: " << time.tonow() / 1000.0 << endl;
+	if (!interval_set.empty()) {cout << "FAILED...Interval set erase " << interval_set.size() << endl;}
 }
+
 
 int main() {
 	// profile_mat_mul();
@@ -178,13 +211,17 @@ int main() {
 	// profile_fixed_vector();
 	// profile_std_vector();
 
+	// compared to std set
 	// 1.1 times slower insert (for all cases), 1.12 times faster iteration, same clear speed, 1.3 times faster find
 	// 1.05 times slower erase
 	// profile_basic_tree();
-	// 4 times faster insert (for all cases), 1.632 times slower iteration, same clear speed, 2 times faster find
+	// 4 times faster insert (for all cases), 1.632 times slower iteration (!?), same clear speed, 2 times faster find
 	// 2 times faster erase
-	profile_treap();
-	profile_std_set();
+	// profile_treap();
+	// profile_std_set();
 
-	// profile_interval_set();
+	// treap version is 4 times faster than RB version as with sets - use Treaps!
+	// finding any overlapping interval is 2 orders of magnitude faster than finding smallest and exact
+	// finding all is much slower
+	profile_interval_set();
 }
