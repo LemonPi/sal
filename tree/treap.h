@@ -30,8 +30,8 @@ protected:
 	virtual void treap_delete(NP node) {
 		// 4 cases based on the children of node
 		// either no children or just one child
-		if 		(!node->left) transplant(node, node->right);
-		else if (!node->right) transplant(node, node->left);
+		if 		(node->left == Node::nil) transplant(node, node->right);
+		else if (node->right == Node::nil) transplant(node, node->left);
 		// else both children, find successor in right subtree
 		else {
 			NP successor {tree_min(node->right)};
@@ -113,28 +113,34 @@ protected:
 	}
 
 public:
+	using value_type = T;
+	using pointer = Node*;
 	using iterator = Tree_iterator<Node>;
 	using const_iterator = Tree_const_iterator<Node>;
 	Treap() = default;
 	Treap(std::initializer_list<T> l) {
 		for (const auto& v : l) insert(v);
 	}
-	virtual ~Treap() {
-		postorder_walk(root, [](NP node){delete node;});
-	}
+	virtual ~Treap() {clear();}
 
-	void insert(T data) {
+	// modifiers
+	void insert(const T& data) {
 		NP node {new Node(data)};
 		treap_insert(node);
 	};
 
-	void erase(T data) {
+	void erase(const T& data) {
 		NP node {tree_find(root, data)};
 		if (node != Node::nil) treap_delete(node);
 	}
+	void clear() {
+		postorder_walk(root, [](NP node){delete node;});
+		root = Node::nil;
+	}
 
-	iterator find(T key) {
-		NP found {tree_find(root,key)};
+	// query
+	iterator find_and_elevante(const T& key) {
+		NP found {tree_find(root, key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
 			found->priority >>= 1;
@@ -142,11 +148,26 @@ public:
 			heap_fix_up(found);
 		}
 		return iterator{found};
+	}
+	iterator find(const T& key) {
+		NP found {tree_find(root,key)};
+		return iterator{found};
 	}	
+	const_iterator find(const T& key) const {
+		NP found {tree_find(root,key)};
+		return const_iterator{found};
+	}	
+	size_t size() const {
+		size_t num_elems {0};
+		inorder_walk(root, [&](const Node* node){++num_elems;});
+		return num_elems;
+	}
+	bool empty() const {return root == Node::nil;}
+
 	// iterators
 	iterator begin() 			 {return iterator{tree_min(root)};}
-	const_iterator begin() const {return const_iterator{tree_min(root)};}
 	iterator end() 				 {return iterator{Node::nil};}
+	const_iterator begin() const {return const_iterator{tree_min(root)};}
 	const_iterator end() const 	 {return const_iterator{Node::nil};}
 
 	void print() const {
@@ -161,11 +182,11 @@ struct Treap_node {
 	static Treap_node* nil;
 	using key_type = T;
 
+	Treap_node *parent, *left, *right;
 	T key;
 	int priority;
-	Treap_node *parent, *left, *right;
 	Treap_node() : priority{std::numeric_limits<int>::max()} {}	// sentinel construction
-	Treap_node(T val) : key{val}, priority{rand()}, parent{nil}, left{nil}, right{nil} {}
+	Treap_node(T val) : parent{nil}, left{nil}, right{nil}, key{val}, priority{rand()} {}
 };
 
 

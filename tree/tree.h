@@ -14,7 +14,7 @@ enum class Color : char {BLACK = 0, RED = 1};
 // core utilities
 // either finds key or the location where the key should go
 template <typename Node>
-Node* tree_find(Node* start, typename Node::key_type key) {
+Node* tree_find(Node* start, const typename Node::key_type& key) {
 	while (start != Node::nil && start->key != key) {
 		if (key < start->key) start = start->left;
 		else start = start->right;
@@ -27,15 +27,15 @@ Node* tree_min(Node* start) {
 	while (start->left != Node::nil) start = start->left;
 	return start;
 }
-
 template <typename Node>
 Node* tree_max(Node* start) {
 	while (start->right != Node::nil) start = start->right;
 	return start;
 }
+
 // successor is node with smallest key greater than start
 template <typename Node>
-Node* tree_successor(Node* start) {
+Node* tree_successor(const Node* start) {
 	if (start->right != Node::nil) return tree_min(start->right);
 	// else go up until a node that's the left child of parent
 	Node* parent {start->parent};
@@ -46,7 +46,7 @@ Node* tree_successor(Node* start) {
 	return parent;
 }
 template <typename Node>
-Node* tree_predecessor(Node* start) {
+Node* tree_predecessor(const Node* start) {
 	if (start->left != Node::nil) return tree_max(start->left);
 	// else go up until a node that's the right child of parent
 	Node* parent {start->parent};
@@ -58,9 +58,9 @@ Node* tree_predecessor(Node* start) {
 }
 
 
-// traversals
+// BST traversals
 template <typename Node, typename Op>
-void preorder_walk(Node* start, Op op) {
+void preorder_walk(Node* start, Op&& op) {
 	if (start != Node::nil) {
 		op(start);
 		preorder_walk(start->left, op);
@@ -68,7 +68,7 @@ void preorder_walk(Node* start, Op op) {
 	}
 }
 template <typename Node, typename Op>
-void inorder_walk(Node* start, Op op) {
+void inorder_walk(Node* start, Op&& op) {
 	if (start != Node::nil) {
 		inorder_walk(start->left, op);
 		op(start);
@@ -76,7 +76,32 @@ void inorder_walk(Node* start, Op op) {
 	}
 }
 template <typename Node, typename Op>
-void postorder_walk(Node* start, Op op) {
+void postorder_walk(Node* start, Op&& op) {
+	if (start != Node::nil) {
+		postorder_walk(start->left, op);
+		postorder_walk(start->right, op);
+		op(start);
+	}
+}
+// const overloads
+template <typename Node, typename Op>
+void preorder_walk(const Node* start, Op&& op) {
+	if (start != Node::nil) {
+		op(start);
+		preorder_walk(start->left, op);
+		preorder_walk(start->right, op);
+	}
+}
+template <typename Node, typename Op>
+void inorder_walk(const Node* start, Op&& op) {
+	if (start != Node::nil) {
+		inorder_walk(start->left, op);
+		op(start);
+		inorder_walk(start->right, op);
+	}
+}
+template <typename Node, typename Op>
+void postorder_walk(const Node* start, Op&& op) {
 	if (start != Node::nil) {
 		postorder_walk(start->left, op);
 		postorder_walk(start->right, op);
@@ -84,42 +109,51 @@ void postorder_walk(Node* start, Op op) {
 	}
 }
 
+template <typename Node, typename Print>
+void walk_and_print_indented(const Node* start, Print&& printer, int indent_step_size, int indent_level = 0, bool new_branch = false) {
+	if (start == Node::nil) return;
+	if (new_branch) std::cout << '\n' << setw(indent_step_size * indent_level) << "\\ ";
+	printer(start);
+	// top / same level is right branch, further down is left branch
+	walk_and_print_indented(start->right, printer, indent_step_size, indent_level+1, false);
+	walk_and_print_indented(start->left, printer, indent_step_size, indent_level+1, true);
+}
 // iterators
 // adjacent iterator (expected of all graphs)
 // iterators from left to right if they exist
 template <typename Node>
 struct Tree_adj_iterator {
-	using NP = Node*;
+	using pointer = Node*;
 	using key_type = typename Node::key_type;
 	using CR = const Tree_adj_iterator<Node>&;
 
-	NP cur;
+	pointer cur;
 
 	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
 	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
 	key_type& operator*() {return cur->key;}
-	NP operator->() {return cur;}
-	NP get() 		{return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}	
+	pointer operator->() {return cur;}
+	pointer get() 		{return cur;}
+	bool operator==(CR other) const {return other.cur == cur;}
+	bool operator!=(CR other) const {return !(*this == other);}	
 	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << *itr.cur; return os;}
 };
 // const version
 template <typename Node>
 struct Tree_adj_const_iterator {
-	using NP = Node*;
+	using const_pointer = const Node*;
 	using key_type = typename Node::key_type;
 	using CR = const Tree_adj_const_iterator<Node>&;
 
-	const NP cur;
+	const_pointer cur;
 
 	void operator++() {if (cur == cur->parent->left) cur = cur->parent->right; else cur = Node::nil;}
 	void operator--() {if (cur == cur->parent->right) cur = cur->parent->left; else cur = Node::nil;}
-	key_type operator*() {return cur->key;}
-	const NP operator->() {return cur;}
-	const NP get() {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}	
+	const key_type& operator*() const {return cur->key;}
+	const_pointer operator->() const {return cur;}
+	const_pointer get() const {return cur;}
+	bool operator==(CR other) const {return other.cur == cur;}
+	bool operator!=(CR other) const {return !(*this == other);}	
 };
 
 // node iterators
@@ -128,20 +162,19 @@ struct Tree_adj_const_iterator {
 // non-const bidirectional iterator
 template <typename Node>
 struct Tree_iterator {
-	using NP = Node*;
 	using key_type = typename Node::key_type;
 	using CR = const Tree_iterator<Node>&;
 	using adjacent_iterator = Tree_adj_iterator<Node>;
 
-	NP cur;
+	Node* cur;
 
 	void operator++() {cur = tree_successor(cur);}
 	void operator--() {cur = tree_predecessor(cur);}
 	key_type& operator*() {return cur->key;}
-	NP operator->() {return cur;}
-	NP get()		{return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
+	Node* operator->() {return cur;}
+	Node* get()		{return cur;}
+	bool operator==(CR other) const {return other.cur == cur;}
+	bool operator!=(CR other) const {return !(*this == other);}
 	adjacent_iterator begin() {
 		if (cur->left != Node::nil) return {cur->left};
 		else return {cur->right};
@@ -152,20 +185,19 @@ struct Tree_iterator {
 // const bidirectional iterator
 template <typename Node>
 struct Tree_const_iterator {
-	using NP = Node*;
 	using key_type = typename Node::key_type;
-	using CR = const Tree_iterator<Node>&;
+	using CR = const Tree_const_iterator<Node>&;
 	using adjacent_const_iterator = Tree_adj_const_iterator<Node>;
 
-	const NP cur;
+	const Node* cur;
 
 	void operator++() {cur = tree_successor(cur);}
 	void operator--() {cur = tree_predecessor(cur);}
-	key_type operator*() {return cur->key;}
-	const NP operator->() {return cur;}
-	const NP get() 		  {return cur;}
-	bool operator==(CR other) {return other.cur == cur;}
-	bool operator!=(CR other) {return !(*this == other);}
+	const key_type& operator*() const {return cur->key;}
+	const Node* operator->() const {return cur;}
+	const Node* get() 		  const {return cur;}
+	bool operator==(CR other) const {return other.cur == cur;}
+	bool operator!=(CR other) const {return !(*this == other);}
 	adjacent_const_iterator begin() const {
 		if (cur->left != Node::nil) return {cur->left};
 		else return {cur->right};
@@ -440,6 +472,7 @@ protected:
 	}
 
 public:
+	using value_type = T;
 	using iterator = Tree_iterator<Node>;
 	using const_iterator = Tree_const_iterator<Node>;
 	using adjacent_iterator = Tree_adj_iterator<Node>;
@@ -450,26 +483,48 @@ public:
 		for (const auto& v : l) insert(v);
 	}
 	virtual ~Tree() {
-		postorder_walk(root, [](NP node){delete node;});
+		clear();
 	}
 
+	// modifiers (non-virtual)
 	void insert(T data) {
 		NP node {new Node(data)};
 		rb_insert(node);
-	};
-
+	}
+	template <typename...Args>
+	void emplace(Args&&... args) {
+		NP node {new Node(std::forward<Args>(args)...)};
+		rb_insert(node);
+	}
 	void erase(T data) {
 		NP node {tree_find(root, data)};
 		if (node != Node::nil) rb_delete(node);
+	}
+	void clear() {
+		postorder_walk(root, [](NP node){delete node;});
+		root = Node::nil;
 	}			
 
+
+	// query and retrieval
 	iterator find(T key) 			 {return iterator{tree_find(root, key)};}
 	const_iterator find(T key) const {return const_iterator{tree_find(root, key)};}
+	// O(n) size lookup; not terribly efficient...
+	size_t size() const {
+		size_t num_elems {0};
+		inorder_walk(root, [&](const Node* node){++num_elems;});
+		return num_elems;
+	}
+	bool empty() const {return root == Node::nil;}
+	// get root for traversal purposes
+	iterator get_root()				{return iterator{root};}
+	const_iterator get_root() const {return const_iterator{root};}
 
-	// iterator
+
+	// iteration
 	iterator begin() 				{return iterator{tree_min(root)};}
-	const_iterator begin() const 	{return const_iterator{tree_min(root)};}
 	iterator end() 					{return iterator{Node::nil};}
+	const_iterator begin() const 	{return const_iterator{tree_min(root)};}
 	const_iterator end() const 		{return const_iterator{Node::nil};}
 
 	// adjacent iterators for compatibility with graph algorithms
@@ -495,15 +550,13 @@ public:
 		else return {{node->right}, {Node::nil}};
 	}	
 
-	// traversals, Op is a function that performs a function on a NP
-	void print() const {
-		inorder_walk(root, [](NP node){std::cout << node->key << ' ';});
-		std::cout << "root: " << root->key << std::endl; 
-	}
 
+	void print() const {
+		walk_and_print_indented(root, [](const Node* node){std::cout << node->key << ' ';}, 5);
+	}
 	// 0 for invalid, else blackheight
-	int valid() const {
-		return blackheight(root);
+	bool valid() const {
+		return blackheight(root) != 0;
 	}
 
 };
@@ -512,13 +565,13 @@ public:
 template <typename T>
 struct Basic_node {
 	static Basic_node* nil;
-
 	using key_type = T;
-	T key;
+
 	Basic_node *parent, *left, *right;
+	T key;
 	Color color;
 	Basic_node() : color{Color::BLACK} {}	// sentinel construction
-	Basic_node(T val) : key{val}, parent{nil}, left{nil}, right{nil}, color{Color::RED} {}
+	Basic_node(T val) : parent{nil}, left{nil}, right{nil}, key{val}, color{Color::RED} {}
 };
 
 template <typename T>

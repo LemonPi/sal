@@ -26,6 +26,7 @@ class Persistent_vector {
 		if (elems) free(elems);
 	}
 public:
+	using value_type = T;
 	using iterator = T*;
 	using const_iterator = const T*;
 	// core functions
@@ -114,6 +115,7 @@ class Fixed_vector {
 		if (elems) free(elems);
 	}
 public:
+	using value_type = T;
 	using iterator = T*;
 	using const_iterator = const T*;
 	// core functions

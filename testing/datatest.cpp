@@ -137,6 +137,7 @@ void test_order_tree(bool print) {
 
 void test_treap(bool print) {
 	sal::Basic_treap<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	if (print) sal::print(t);
 
 	auto node = t.find(4);
 	if (node == t.end()) cout << "FAILED...Tree find\n";
@@ -149,6 +150,7 @@ void test_treap(bool print) {
 	// attempt to elevate 4's priority
 	t.insert(4);
 	for (int i = 0; i < 20; ++i) t.find(4);
+
 }
 
 void test_interval_set(bool print) {
@@ -159,6 +161,14 @@ void test_interval_set(bool print) {
 
 	interval = t.find(11, 14);
 	if (interval != t.end()) cout << "FAILED...Interval set find\n";
+
+	sal::Interval_set<int> tt {{5,10},{3,6},{0,2},{7,12},{14,17}};
+	interval = tt.find(1, 4);
+	if (print) cout << interval << endl;
+	interval = tt.find_first(1, 4);
+	if (print) cout << interval << endl;
+	auto all_intervals = tt.find_all(1, 4);
+	if (print) sal::print(all_intervals);
 }
 
 void test_undirected_graph(bool print) {
@@ -452,7 +462,7 @@ int main(int argc, char** argv) {
 	// test_tree(print);
 	// test_order_tree(print);
 	// test_interval_set(print);
-	// test_treap(print);
+	test_treap(print);
 	// test_list(print);
 	// test_undirected_graph(print);
 	// test_directed_graph(print);
@@ -468,5 +478,5 @@ int main(int argc, char** argv) {
 	// test_dijkstra(print);
 	// test_difference_constraint(print);
 	// test_adjacency_matrix(print);
-	test_vector(print);
+	// test_vector(print);
 }

@@ -41,13 +41,16 @@ class Interval_augment : public Tree<Node> {
 	// either finds an overlapping interval or nil
 	NP interval_search(NP interval, T low, T high) const {
 		while (interval != Node::nil && no_overlap(interval, low, high)) {
+			// left side's entire subtree overlaps with interval to find
 			if (interval->left != Node::nil && interval->left->max >= low)
 				interval = interval->left;
+			// can't possibly be found in the left subtree, by elimination look at right
+			// [left->min...  left->high...     left->max]      [low     high]
 			else interval = interval->right; 
 		}
 		return interval;
 	}
-	// first (smallest key/low) interval that matches
+	// first (smallest key/low) interval that matches O(lgn)
 	NP interval_min_search(NP interval, T low, T high) const {
 		// check if left subtree overlaps
 		if (interval->left != Node::nil && interval->left->max >= low) {
@@ -64,18 +67,22 @@ class Interval_augment : public Tree<Node> {
 	// all intervals that match
 	std::vector<NP> interval_all_search(NP interval, T low, T high) const {
 		std::vector<NP> res;
-		if (overlap(interval, low, high)) res.push_back(interval);
-		if (interval->left != Node::nil && interval->left->max >= low) {
-			std::vector<NP> left {interval_all_search(interval->left, low, high)};
-			res.insert(res.end(), left.begin(), left.end());
-		} 
-		if (interval->right != Node::nil && interval->right->key <= low) {
-			std::vector<NP> right {interval_all_search(interval->right, low, high)};
-			res.insert(res.end(), right.begin(), right.end());
-		}
+		interval_all_search(interval, low, high, res);
 		return res;
 	}
+	void interval_all_search(NP interval, T low, T high, std::vector<NP>& matched_intervals) const {
+		if (overlap(interval, low, high)) matched_intervals.push_back(interval);
+		if (interval->left != Node::nil && interval->left->max >= low) {
+			// might have intersecting interval on left
+			interval_all_search(interval->left, low, high, matched_intervals);
+		} 
+		if (interval->right != Node::nil && interval->right->key <= low) {
+			// might have intersecting interval on right
+			interval_all_search(interval->right, low, high, matched_intervals);
+		}
+	}
 	NP interval_exact_search(NP start, T low, T high) {
+		// low and high must exactly match the interval
 		NP interval {tree_find(start, low)};
 		// if found interval shares same low but different high, can continually search on same subtree
 		while (interval != Node::nil && high != interval->high) interval = tree_find(interval, low);
@@ -171,6 +178,8 @@ class Interval_augment : public Tree<Node> {
 	}
 
 public:
+	using pointer = Node*;
+	using const_pointer = const Node*;
 	using iterator  = typename Tree<Node>::iterator;
 	using const_iterator = typename Tree<Node>::const_iterator;
 	Interval_augment() = default;
@@ -214,8 +223,9 @@ public:
 	std::vector<NP> find_all(Interval<T> interval) const 	{return interval_all_search(root, interval.low, interval.high);}
 
 	void print() const {
-		inorder_walk(root, [](NP node){std::cout << '[' << node->key << ',' << node->high << ']' << '(' << node->max << ')' << ' ';});
-		std::cout << "root: " << '[' << root->key << ',' << root->high << ']' << '(' << root->max << ')' << std::endl; 
+		walk_and_print_indented(root, [](const Node* node){
+			std::cout << '[' << std::setw(6) << node->key << ',' << std::setw(6) << node->high << ']' << '(' << std::setw(6) << node->max << ')' << " -> ";},
+			27);
 	}
 };
 
@@ -224,17 +234,22 @@ struct Internode {
 	static Internode* nil;
 	using key_type = T;
 
-	T key, high, max;	// low is the key
 	Internode *parent, *left, *right;
+	T key, high, max;	// low is the key
 	Color color;
 	Internode() : max{std::numeric_limits<T>::lowest()}, color{Color::BLACK} {}	// sentinel construction
-	Internode(T l, T h) : key{l}, high{h}, max{h}, parent{nil}, left{nil}, right{nil}, color{Color::RED} {}
+	Internode(T l, T h) : parent{nil}, left{nil}, right{nil}, key{l}, high{h}, max{h},  color{Color::RED} {}
 	// convert to interval
 	operator Interval<T>() {return {key, high};}
 };
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Internode<T>& interval) {
 	os << '[' << interval.key << ',' << interval.high << ']';
+	return os;
+}
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Internode<T>* interval) {
+	os << '[' << interval->key << ',' << interval->high << ']';
 	return os;
 }
 
