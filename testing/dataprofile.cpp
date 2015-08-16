@@ -203,12 +203,28 @@ void profile_interval_set() {
 	if (!interval_set.empty()) {cout << "FAILED...Interval set erase " << interval_set.size() << endl;}
 }
 
-struct Rectangle {
-	int x_low, x_high, y_low, y_high;
+struct Rect {
+	int xl, xh, yl, yh;
 };
 
 void profile_plane_set() {
-
+	std::vector<Rect> lines;
+	static constexpr int half_width = 5;
+	// the bounding box size of the plane also impacts performance (significant in lookup)
+	for (int i = 0; i < test_size; ++i) {
+		int x_center {randint(test_size / 100)};
+		int y_center {randint(test_size / 100)};
+		// odd and even decide whether line will be vertical or horizontal
+		if (i & 1) lines.push_back({x_center - half_width, x_center + half_width, y_center, y_center});
+		else 	   lines.push_back({x_center, x_center , y_center - half_width, y_center + half_width});
+	}
+	cout << "plane set\n";
+	Timer time;
+	sal::Plane_set<int> planes;
+	for (const auto& line : lines) {
+		planes.insert(line.xl, line.xh, line.yl, line.yh);
+	}
+	cout << "random insert: " << time.tonow() / 1000.0 << endl;
 }
 
 int main() {
@@ -230,5 +246,7 @@ int main() {
 	// treap version is 4 times faster than RB version as with sets - use Treaps!
 	// finding any overlapping interval is 2 orders of magnitude faster than finding smallest and exact
 	// finding all is much slower
-	profile_interval_set();
+	// profile_interval_set();
+
+	profile_plane_set();
 }

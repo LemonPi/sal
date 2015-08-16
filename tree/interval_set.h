@@ -86,7 +86,21 @@ Node* interval_exact_search(Node* start, typename Node::key_type low, typename N
 	// low and high must exactly match the interval
 	Node* interval = tree_find(start, low);
 	// if found interval shares same low but different high, can continually search on same subtree
-	while (interval != Node::nil && high != interval->high) interval = tree_find(interval, low);
+	while (interval != Node::nil && high != interval->high) {
+		// keys to the left are strictly less than parent, so try right side (which can be equal to parent)
+		interval = tree_find(interval->right, low);
+	}
+	return interval;
+}
+template <typename Node>
+const Node* interval_exact_search(const Node* start, typename Node::key_type low, typename Node::key_type high) {
+	// low and high must exactly match the interval
+	const Node* interval = tree_find(start, low);
+	// if found interval shares same low but different high, can continually search on same subtree
+	while (interval != Node::nil && high != interval->high) {
+		// keys to the left are strictly less than parent, so try right side (which can be equal to parent)
+		interval = tree_find(interval->right, low);
+	}
 	return interval;
 }
 // fixups to maintain balance
