@@ -197,10 +197,14 @@ struct Tree_adj_const_iterator {
 // full traversal takes O(n) time and O(1) space
 // traverse at most 2(n - 1) edges, where n is # nodes
 // non-const bidirectional iterator
+template <typename Node> struct Tree_iterator;
+template <typename Node> struct Tree_const_iterator;
+
 template <typename Node>
 struct Tree_iterator {
 	using key_type = typename Node::key_type;
-	using CR = const Tree_iterator<Node>&;
+	using const_reference = const Tree_iterator<Node>&;
+	using const_iterator = Tree_const_iterator<Node>;
 	using adjacent_iterator = Tree_adj_iterator<Node>;
 
 	Node* cur;
@@ -210,20 +214,23 @@ struct Tree_iterator {
 	key_type& operator*() {return cur->key;}
 	Node* operator->() {return cur;}
 	Node* get()		{return cur;}
-	bool operator==(CR other) const {return other.cur == cur;}
-	bool operator!=(CR other) const {return !(*this == other);}
+	bool operator==(const_reference other) const 		{return other.cur == cur;}
+	bool operator!=(const_reference other) const 		{return !(*this == other);}
+	bool operator==(const const_iterator& other) const 	{return other.cur == cur;}
+	bool operator!=(const const_iterator& other) const 	{return !(*this == other);}
 	adjacent_iterator begin() {
 		if (cur->left != Node::nil) return {cur->left};
 		else return {cur->right};
 	}
 	adjacent_iterator end()   {return {Node::nil};}
-	friend std::ostream& operator<<(std::ostream& os, CR itr) {os << *itr.cur; return os;}
+	friend std::ostream& operator<<(std::ostream& os, const_reference itr) {os << *itr.cur; return os;}
 };
 // const bidirectional iterator
 template <typename Node>
 struct Tree_const_iterator {
 	using key_type = typename Node::key_type;
-	using CR = const Tree_const_iterator<Node>&;
+	using const_reference = const Tree_const_iterator<Node>&;
+	using iterator = Tree_iterator<Node>;
 	using adjacent_const_iterator = Tree_adj_const_iterator<Node>;
 
 	const Node* cur;
@@ -233,8 +240,10 @@ struct Tree_const_iterator {
 	const key_type& operator*() const {return cur->key;}
 	const Node* operator->() const {return cur;}
 	const Node* get() 		  const {return cur;}
-	bool operator==(CR other) const {return other.cur == cur;}
-	bool operator!=(CR other) const {return !(*this == other);}
+	bool operator==(const_reference other) const {return other.cur == cur;}
+	bool operator!=(const_reference other) const {return !(*this == other);}
+	bool operator==(const iterator& other) const {return other.cur == cur;}
+	bool operator!=(const iterator& other) const {return !(*this == other);}	
 	adjacent_const_iterator begin() const {
 		if (cur->left != Node::nil) return {cur->left};
 		else return {cur->right};

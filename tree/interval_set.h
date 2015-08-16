@@ -19,7 +19,7 @@ struct Interval {
 
 // interval tree operation
 template <typename Node>
-no_overlap(const Node* interval, typename Node::key_type low, typename Node::key_type high) {
+bool no_overlap(const Node* interval, typename Node::key_type low, typename Node::key_type high) {
 	return (low > interval->high || interval->key > high);
 }
 template <typename Node>
@@ -68,7 +68,7 @@ void interval_all_search(Node* interval, typename Node::key_type low, typename N
 		// might have intersecting interval on left
 		interval_all_search(interval->left, low, high, matched_intervals);
 	} 
-	if (interval->right != Node::nil && interval->right->key <= low) {
+	if (interval->right != Node::nil && interval->right->key <= high) {
 		// might have intersecting interval on right
 		interval_all_search(interval->right, low, high, matched_intervals);
 	}

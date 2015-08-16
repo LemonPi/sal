@@ -18,7 +18,7 @@ protected:
 
 	// treap specific methods
 	void heap_fix_up(NP node) {
-		// climb up via rotations until priority's max-heap property is fulfilled (highest priority on top)
+		// climb up via rotations until priority's min-heap property is fulfilled (lowest priority on top)
 		while (node != root && node->priority < node->parent->priority) {
 			if (is_left_child(node)) rotate_right(node->parent);
 			else rotate_left(node->parent);
@@ -174,7 +174,7 @@ public:
 		NP found {tree_find(root, key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
-			found->priority <<= 1;
+			found->priority >>= 1;
 			heap_fix_up(found);
 		}
 		return iterator{found};

@@ -47,9 +47,8 @@ public:
 		// no interval exists, need to create interval
 		if (x_interval == Node::nil) {
 			x_interval = new Node{x_low, x_high};	// x is our first dimension
-			treap_insert(x_interval, skip_insert_fixup<Node>);
+			treap_insert(x_interval, propagate_max_down<Node>);
 		}
-		else std::cout << "inserting into existing interval " << x_interval << "\n";
 		x_interval->insert(y_low, y_high);
 	}
 
