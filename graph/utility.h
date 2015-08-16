@@ -201,7 +201,7 @@ SPM<Graph> min_span_tree(const Graph& g, MST_visitor&& visitor = {}) {
 
 	std::unordered_set<V> explored;
 	Heap<V, Cmp> exploring {Cmp{property}};
-	exploring.batch_insert(g.begin(), g.end());
+	exploring.insert(g.begin(), g.end());
 
 	// batch insert is O(n) rather than O(nlgn) of inserting each sequentially
 

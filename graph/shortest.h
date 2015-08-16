@@ -112,7 +112,7 @@ SPM<Graph> dijkstra(const Graph& g, typename Graph::vertex_type s, DJ_visitor&& 
 	std::unordered_set<V> explored;
 	// comparator querying on distance
 	Heap<V, Cmp> exploring {Cmp{property}};
-	exploring.batch_insert(g.begin(), g.end());
+	exploring.insert(g.begin(), g.end());
 
 	while (!exploring.empty()) {
 		V u {exploring.extract_top()};

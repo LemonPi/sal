@@ -16,11 +16,15 @@ class Heap {
 	std::vector<T> elems;
 	// comparator for sorting in a maxheap cmp(a, b) being true means a is an ancestor of b
 	Cmp cmp;
+
+	// semantically clear helpers for getting relative position
 	size_t parent(size_t i) const {return i >> 1;}
 	size_t left(size_t i)   const {return i << 1;}
 	size_t right(size_t i)  const {return (i << 1) + 1;}
-	size_t tail() const {return elems.size() - 1;}
+	size_t tail() const 		  {return elems.size() - 1;}
+
 public:
+
 	// only exposing due to occasionaly indirect value changes
 	// float value up for directly changed value
 	void sift_up(size_t hole, T&& item) {
@@ -34,6 +38,7 @@ public:
 	void sift_up(size_t hole) {
 		sift_up(hole, std::move(elems[hole]));
 	}
+
 	// adjusts elems[i] assuming it's been modified to be smaller than its children
 	// runs in O(lgn) time, floats elems[i] down
 	void sift_down(size_t hole) {
@@ -51,6 +56,7 @@ public:
 		}
 		elems[hole] = std::move(item);
 	}
+
 private:	
 	// runs in O(n) time, produces max heap from unordered input array
 	void build_heap() {
@@ -58,6 +64,7 @@ private:
 		for (size_t i = elems.size() >> 1; i != 0; --i) 
 			sift_down(i);
 	}
+	// given an item, find the index of the item with head as the topmost ancestor
 	size_t find_key(size_t head, const T& elem) const {
 		if (elems[head] == elem) return head;
 		size_t child_location {0};	// 0 indicates not found
@@ -70,6 +77,7 @@ private:
 			child_location = find_key(left(head), elem);
 		return child_location;
 	}
+
 public:
 	using value_type = T;
 	using iterator = typename std::vector<T>::iterator;
@@ -78,23 +86,25 @@ public:
 
 	// construction ------------
 	// O(n) time construction via these constructors (would be O(nlgn) for repeated inserts)
-	explicit Heap(Cmp&& c) : elems{T{}}, cmp(c) {}
+	explicit Heap(Cmp&& c) : elems{T{}}, cmp(std::move(c)) {}
 	// transfer ownership of contents (int to prevent overload conflict)
 	template <typename Container>
-	Heap(Container&& container, int, Cmp&& c = Cmp{}) : elems(std::move(container)), cmp(c) {
+	Heap(Container&& container, int, Cmp&& c = Cmp{}) : elems(std::move(container)), cmp(std::move(c)) {
 		elems.push_back(SENTINEL(T));
 		std::swap(elems.back(), elems[0]);
 		build_heap();
 	} 
-	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(c) {
+
+	Heap(std::initializer_list<T> l, Cmp&& c = Cmp{}) : cmp(std::move(c)) {
 		elems.reserve(l.size()+1);
 		elems.push_back(SENTINEL(T));
 		// cannot move from initializer list...
 		for (const T& v : l) {elems.push_back(v);}
 		build_heap();
 	}
+
 	template <typename Iter>
-	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(c) {
+	Heap(Iter begin, Iter end, Cmp&& c = Cmp{}) : cmp(std::move(c)) {
 		elems.reserve(end - begin + 1);
 		elems.push_back(SENTINEL(T));
 		while (begin != end) {elems.emplace_back(std::move(*begin)); ++begin;}
@@ -104,7 +114,11 @@ public:
 	// query ---------------
 	bool empty() const 	{return elems.size() <= 1;}
 	size_t size() const {return elems.size() - 1;}
+
+	T& top()			  		{return elems[1];}
 	const T& top() const 		{return elems[1];}
+
+
 	// get index to item
 	size_t key(const T& item) const {
 		return find_key(1, item);
@@ -133,6 +147,7 @@ public:
 		elems.pop_back();
 		return top;
 	}
+
 	// gets top while inserting a new element, same complexity as extracting top
 	T replace_top(T&& new_elem) {
 		if (empty()) {elems.emplace_back(new_elem); return SENTINEL(T);}
@@ -162,7 +177,7 @@ public:
 	}
 	// O(n) like constructor for all elements
 	template <typename Iter>
-	void batch_insert(Iter begin, Iter end) {
+	void insert(Iter begin, Iter end) {
 		while (begin != end) {elems.push_back(*begin); ++begin;}
 		build_heap();
 	}
@@ -175,7 +190,6 @@ public:
 		elems[i] = changed;
 		sift_down(i);	// move closer to a leaf
 	}
-
 
 
 	// iteration in element order (not heap) -------------

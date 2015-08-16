@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <iomanip>
 #include <initializer_list>
 
 namespace sal {
@@ -139,12 +140,21 @@ void postorder_walk(const Node* start, Op&& op) {
 template <typename Node, typename Print>
 void walk_and_print_indented(const Node* start, Print&& printer, int indent_step_size, int indent_level = 0, bool new_branch = false) {
 	if (start == Node::nil) return;
-	if (new_branch) std::cout << '\n' << setw(indent_step_size * indent_level) << "\\ ";
+	if (new_branch) std::cout << '\n' << std::setw(indent_step_size * indent_level) << "\\ ";
 	printer(start);
 	// top / same level is right branch, further down is left branch
 	walk_and_print_indented(start->right, printer, indent_step_size, indent_level+1, false);
 	walk_and_print_indented(start->left, printer, indent_step_size, indent_level+1, true);
 }
+
+
+// no-op fixup operators
+template<typename Node>
+void skip_insert_fixup(const Node*, const Node*) {}
+template<typename Node>
+void skip_delete_fixup(const Node*) {}
+
+
 // iterators
 // adjacent iterator (expected of all graphs)
 // iterators from left to right if they exist
@@ -522,7 +532,7 @@ public:
 	// modifiers (non-virtual)
 	void insert(T data) {
 		NP node {new Node(data)};
-		rb_insert(node, [](const Node*, const Node*){});	// no additional work (useful only for augments)
+		rb_insert(node, skip_insert_fixup<Node>);	// no additional work (useful only for augments)
 	}
 	template <typename...Args>
 	void emplace(Args&&... args) {
@@ -531,7 +541,7 @@ public:
 	}
 	void erase(T data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) rb_delete(node, [](const Node*){});	// no additional work (useful only for augments)
+		if (node != Node::nil) rb_delete(node, skip_delete_fixup<Node>);	// no additional work (useful only for augments)
 	}
 	void clear() {
 		postorder_walk(root, [](NP node){delete node;});

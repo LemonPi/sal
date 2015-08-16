@@ -85,7 +85,7 @@ void test_heap(bool print) {
 	sal::Heap<int, Cmp> h {Cmp{property}};
 	
 	if (print) cout << "batch inserting\n";
-	h.batch_insert(order.begin(), order.end());
+	h.insert(order.begin(), order.end());
 
 	size_t prechange_key {h.key(6)};
 	property[6].distance = 10;
@@ -179,6 +179,26 @@ void test_interval_set(bool print) {
 	if (print) cout << interval << endl;
 	auto all_intervals = tt.find_all(1, 4);
 	if (all_intervals.size() != 2) cout << "FAILED...Interval set find all\n";
+}
+
+void test_plane_set(bool print) {
+	sal::Plane_set<int> planes;
+	planes.insert(1,3, 0,2);	// rectangle
+	planes.insert(2,5, 3,3);	// horizontal line
+	planes.insert(0,0, 4,7);	// vertical line
+	planes.insert(1,3, 5,5);	// h. line 2
+	planes.insert(5,5, 5,8);	// v. line 2
+
+	auto intersecting_plane = planes.find(-1,0, 2,3);	// should be below the vertical line and to the left of rectangle
+	if (intersecting_plane != planes.end()) cout << "FAILED...Plane set find (false positive)\n";
+
+	intersecting_plane = planes.find(2,4, 3,4);	// bottom edge lines on horizontal line
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find\n";
+	if (print) cout << intersecting_plane << endl;
+
+	intersecting_plane = planes.find(2,6, 6,9);	// high rectangle intersecting top half of v. line 2
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find\n";
+	if (print) cout << intersecting_plane << endl;	
 }
 
 void test_undirected_graph(bool print) {
@@ -468,25 +488,26 @@ int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	test_heap(print);
-	test_tree(print);
-	test_order_tree(print);
-	test_interval_set(print);
-	test_treap(print);
-	test_list(print);
-	test_undirected_graph(print);
-	test_directed_graph(print);
-	test_matrix(print);
-	test_bfs(print);
-	test_dfs(print);
-	test_topological_sort(print);
-	test_transpose(print);
-	test_strongly_connected(print);
-	test_mst(print);
-	test_bellman_ford(print);
-	test_shortest_dag(print);
-	test_dijkstra(print);
-	test_difference_constraint(print);
-	test_adjacency_matrix(print);
-	test_vector(print);
+	// test_heap(print);
+	// test_tree(print);
+	// test_order_tree(print);
+	// test_interval_set(print);
+	test_plane_set(print);
+	// test_treap(print);
+	// test_list(print);
+	// test_undirected_graph(print);
+	// test_directed_graph(print);
+	// test_matrix(print);
+	// test_bfs(print);
+	// test_dfs(print);
+	// test_topological_sort(print);
+	// test_transpose(print);
+	// test_strongly_connected(print);
+	// test_mst(print);
+	// test_bellman_ford(print);
+	// test_shortest_dag(print);
+	// test_dijkstra(print);
+	// test_difference_constraint(print);
+	// test_adjacency_matrix(print);
+	// test_vector(print);
 }

@@ -131,6 +131,7 @@ class Interval_augment : public Tree<Node> {
 	}
 
 public:
+	using value_type = T;
 	using pointer = Node*;
 	using const_pointer = const Node*;
 	using iterator  = typename Tree<Node>::iterator;
@@ -216,10 +217,11 @@ class Interval_treap : public Treap<Node> {
 	}
 
 public:
+	using value_type = T;
 	using pointer = Node*;
 	using const_pointer = const Node*;
-	using iterator  = typename Tree<Node>::iterator;
-	using const_iterator = typename Tree<Node>::const_iterator;
+	using iterator  = typename Treap<Node>::iterator;
+	using const_iterator = typename Treap<Node>::const_iterator;
 
 	using Treap<Node>::size;
 	using Treap<Node>::empty;

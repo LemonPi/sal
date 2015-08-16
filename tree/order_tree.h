@@ -31,9 +31,22 @@ Node* os_select(Node* start, size_t rank) {
 	return Node::nil;
 }
 
+// rb operations modified for order statistics
+template <typename Node>
+void grow_subtree_size(Node* start, const Node*) {
+	++start->size; // simply increment size of each ancestor going down
+}
+template <typename Node>
+void update_ancestor_size(Node* moved) {
+	moved = moved->parent;
+	while (moved != Node::nil) {
+		--moved->size;
+		moved = moved->parent;
+	}		
+}
+
 template <typename Node>
 class Order_augment : public Tree<Node> {
-
 	using NP = Node*;
 	using T = typename Node::key_type;
 	using Tree<Node>::root;
@@ -53,50 +66,16 @@ class Order_augment : public Tree<Node> {
 		return rank;
 	}
 
-	// rb operations modified for order statistics
-	static void grow_subtree_size(Node* start, const Node*) {
-		++start->size; // simply increment size of each ancestor going down
-	}
-	static void update_ancestor_size(Node* moved) {
-		moved = moved->parent;
-		while (moved != Node::nil) {
-			--moved->size;
-			moved = moved->parent;
-		}		
-	}
-
 	// rotations, augmented by changing child and node's sizes
 	virtual void rotate_left(NP node) override {
 		NP child {node->right};
-
-		node->right = child->left;
-		if (child->left != Node::nil) child->left->parent = node;
-
-		child->parent = node->parent;
-		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
-		else node->parent->right = child;
-
-		child->left = node;
-		node->parent = child;
-
+		Tree<Node>::rotate_left(node);
 		child->size = node->size;
 		node->size = node->left->size + node->right->size + 1;	
 	}
 	virtual void rotate_right(NP node) override {
 		NP child {node->left};
-
-		node->left = child->right;
-		if (child->right != Node::nil) child->right->parent = node;
-
-		child->parent = node->parent;
-		if (node->parent == Node::nil) root = child;
-		else if (node == node->parent->left) node->parent->left = child;
-		else node->parent->right = child;
-
-		child->right = node;
-		node->parent = child;	
-
+		Tree<Node>::rotate_right(node);	
 		child->size = node->size;
 		node->size = node->left->size + node->right->size + 1;
 	}
@@ -111,12 +90,12 @@ public:
 
 	void insert(const T& data) {
 		NP node {new Node(data)};
-		rb_insert(node, grow_subtree_size);
+		rb_insert(node, grow_subtree_size<Node>);
 	};
 
 	void erase(const T& data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) rb_delete(node, update_ancestor_size);
+		if (node != Node::nil) rb_delete(node, update_ancestor_size<Node>);
 	}
 
 	// order statistics methods interface

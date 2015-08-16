@@ -203,6 +203,13 @@ void profile_interval_set() {
 	if (!interval_set.empty()) {cout << "FAILED...Interval set erase " << interval_set.size() << endl;}
 }
 
+struct Rectangle {
+	int x_low, x_high, y_low, y_high;
+};
+
+void profile_plane_set() {
+
+}
 
 int main() {
 	// profile_mat_mul();
@@ -215,7 +222,7 @@ int main() {
 	// 1.1 times slower insert (for all cases), 1.12 times faster iteration, same clear speed, 1.3 times faster find
 	// 1.05 times slower erase
 	// profile_basic_tree();
-	// 4 times faster insert (for all cases), 1.632 times slower iteration (!?), same clear speed, 2 times faster find
+	// 4 times faster insert (for all cases), 1.532 times slower iteration (!?), same clear speed, 2 times faster find
 	// 2 times faster erase
 	// profile_treap();
 	// profile_std_set();

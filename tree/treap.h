@@ -18,7 +18,7 @@ protected:
 
 	// treap specific methods
 	void heap_fix_up(NP node) {
-		// climb up via rotations until priority's max-heap property is fulfilled
+		// climb up via rotations until priority's max-heap property is fulfilled (highest priority on top)
 		while (node != root && node->priority < node->parent->priority) {
 			if (is_left_child(node)) rotate_right(node->parent);
 			else rotate_left(node->parent);
@@ -26,6 +26,7 @@ protected:
 	}
 	template <typename Op>
 	void treap_insert(NP node, Op&& fixup) {
+		// assumes caller has handle to node so no need to return it
 		tree_insert(root, node, fixup);
 		heap_fix_up(node);
 	}
@@ -144,6 +145,7 @@ protected:
 public:
 	using value_type = T;
 	using pointer = Node*;
+	using const_pointer = const Node*;
 	using iterator = Tree_iterator<Node>;
 	using const_iterator = Tree_const_iterator<Node>;
 	Treap() = default;
@@ -155,12 +157,12 @@ public:
 	// modifiers
 	void insert(const T& data) {
 		NP node {new Node(data)};
-		treap_insert(node, [](const Node*, const Node*){});
+		treap_insert(node, skip_insert_fixup<Node>);
 	};
 
 	void erase(const T& data) {
 		NP node {tree_find(root, data)};
-		if (node != Node::nil) treap_delete(node, [](const Node*){});
+		if (node != Node::nil) treap_delete(node, skip_delete_fixup<Node>);
 	}
 	void clear() {
 		postorder_walk(root, [](NP node){delete node;});
@@ -172,8 +174,7 @@ public:
 		NP found {tree_find(root, key)};
 		// elevate the found node's priority for better temporal locality
 		if (found != Node::nil) {
-			found->priority >>= 1;
-			// fix any min-heap violations
+			found->priority <<= 1;
 			heap_fix_up(found);
 		}
 		return iterator{found};
