@@ -189,24 +189,46 @@ void test_interval_set(bool print) {
 	if (all_intervals.size() != 2) cout << "FAILED...Interval set find all\n";
 }
 
+struct Rect {
+	int xl,xh, yl,yh;
+};
+
 void test_plane_set(bool print) {
+	vector<Rect> lines {
+		{2,5, 3,3}, // first horizontal line
+		{0,0, 4,7},	// first vertical line
+		{1,3, 5,5}, // h2
+		{5,5, 5,8}, // v2
+	};
+
 	sal::Plane_set<int> planes;
-	planes.insert(1,3, 0,2);	// rectangle
-	planes.insert(2,5, 3,3);	// horizontal line
-	planes.insert(0,0, 4,7);	// vertical line
-	planes.insert(1,3, 5,5);	// h. line 2
-	planes.insert(5,5, 5,8);	// v. line 2
+
+	for (auto& line : lines) planes.insert(line.xl, line.xh, line.yl, line.yh);
+
 
 	auto intersecting_plane = planes.find(-1,0, 2,3);	// should be below the vertical line and to the left of rectangle
 	if (intersecting_plane != planes.end()) cout << "FAILED...Plane set find (false positive)\n";
 
 	intersecting_plane = planes.find(2,4, 3,4);	// bottom edge lines on horizontal line
-	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find\n";
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find (tangent to horizontal)\n";
 	if (print) cout << intersecting_plane << endl;
 
 	intersecting_plane = planes.find(2,6, 6,9);	// high rectangle intersecting top half of v. line 2
-	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find\n";
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find (bisecting vertical)\n";
 	if (print) cout << intersecting_plane << endl;	
+
+	// enclosing rectangle around the first horizontal line
+	intersecting_plane = planes.find(1,6, 2,4);
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find (horizontal enclosing)\n";
+	if (print) cout << intersecting_plane << endl;
+
+	// enclosing rectangle around the first vertical line
+	intersecting_plane = planes.find(-1,1, 2,8);
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find (vertical enclosing)\n";
+
+	// tangent rectangle around the first vertical line
+	intersecting_plane = planes.find(-1,0, 2,8);
+	if (intersecting_plane == planes.end()) cout << "FAILED...Plane set find (vertical tangent)\n";
 }
 
 void test_undirected_graph(bool print) {
