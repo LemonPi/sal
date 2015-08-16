@@ -60,7 +60,7 @@ Node* interval_min_search(Node* interval, typename Node::key_type low, typename 
 	else return interval_min_search(interval->right, low, high);
 }
 
-// all intervals that match, much slower
+// all intervals that match, in O(min(n, klgn)) time where k is the number of matched intervals
 template <typename Node>
 void interval_all_search(Node* interval, typename Node::key_type low, typename Node::key_type high, std::vector<Node*>& matched_intervals) {
 	if (overlap(interval, low, high)) matched_intervals.push_back(interval);
@@ -68,7 +68,8 @@ void interval_all_search(Node* interval, typename Node::key_type low, typename N
 		// might have intersecting interval on left
 		interval_all_search(interval->left, low, high, matched_intervals);
 	} 
-	if (interval->right != Node::nil && interval->right->key <= high) {
+	// not already on the right side of the querying interval
+	if (interval->key < high && interval->right != Node::nil && interval->right->max >= low) {
 		// might have intersecting interval on right
 		interval_all_search(interval->right, low, high, matched_intervals);
 	}
