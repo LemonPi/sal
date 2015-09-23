@@ -240,6 +240,7 @@ public:
 
 	using Treap<Node>::size;
 	using Treap<Node>::empty;
+	using Treap<Node>::inorder_walk;
 
 	Interval_treap() = default;
 	Interval_treap(std::initializer_list<Interval<T>> l) {

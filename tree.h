@@ -2,6 +2,7 @@
 #include "tree/tree.h"
 #include "tree/order_tree.h"
 #include "tree/treap.h"
+#include "tree/print.h"
 
 // recommended types for replacing std functions
 namespace sal {

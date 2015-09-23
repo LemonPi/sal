@@ -199,7 +199,7 @@ public:
 
 	size_t size() const {
 		size_t num_elems {0};
-		inorder_walk(root, [&](const Node* node){++num_elems;});
+		inorder_walk([&](const Node* node){++num_elems;});
 		return num_elems;
 	}
 	bool empty() const {return root == Node::nil;}
@@ -211,10 +211,19 @@ public:
 	const_iterator end() const 	 {return const_iterator{Node::nil};}
 
 	void print() const {
-		inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->priority << ')' << ' ';});
+		sal::inorder_walk(root, [](NP node){std::cout << node->key << '(' << node->priority << ')' << ' ';});
 		std::cout << "root: " << root->key << '(' << root->priority << ')' << std::endl; 
 	}
 
+	// allow users to apply a function in order to each node
+	template <typename Op>
+	void inorder_walk(Op&& op) {
+		sal::inorder_walk(root, op);
+	}
+	template <typename Op>
+	void inorder_walk(Op&& op) const {
+		sal::inorder_walk(root, op);
+	}
 };
 
 template <typename T>

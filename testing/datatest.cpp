@@ -14,9 +14,17 @@
 #include "../graph/shortest.h"
 #include "../graph/linear.h"
 #include "../vector.h"
+#include "../bits/bitgrid.h"
 
 using namespace std;
 
+int randint_seeded() {
+	static unsigned int seed = 0xDEADBEEF;
+	static constexpr unsigned int multiplier = 1664525;
+	static constexpr unsigned int increment = 1013904223;
+	seed = multiplier * seed + increment;
+	return static_cast<int>(seed);
+}
 
 void test_list(bool print) {
 	sal::Basic_list<int> l {1, 4, 2, 5, 3, 7, 6};
@@ -106,7 +114,7 @@ void test_heap(bool print) {
 void test_tree(bool print) {
 
 	using Node = sal::Basic_node<int>;
-	sal::Basic_tree<int> t {5, 3, 7, 1, 9, 4, 2, 0, 10, 8, 6};
+	sal::Basic_tree<int> t {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 	auto nil = t.end();
 	if (static_cast<int>(nil->color) != 0) 
@@ -123,6 +131,25 @@ void test_tree(bool print) {
 	// testing iterators with standard library functions
 	if (print) for_each(t.begin(), t.end(), 
 		[](const Node& node){std::cout << node.key << ' ';});
+	if (print) sal::pretty_print(t.get_root().get());
+
+
+	sal::Basic_tree< int > tt;
+	for (int i = 0; i < 10000; ++i) {
+		tt.insert(randint_seeded());
+		if (!tt.valid()) cout << "FAILED...Basic_tree validation after insert (0 to 10000)\n";
+	}
+
+
+	sal::Basic_tree< int > s;
+	s.insert( 3 );
+	if (print) sal::pretty_print(s.get_root().get());
+	s.insert( 1 );
+	if (print) sal::pretty_print(s.get_root().get());
+	s.insert( 2 );
+	if (print) sal::pretty_print(s.get_root().get());
+	if (!s.valid()) cout << "FAILED...Basic_tree validation after insert\n";
+
 }
 
 void test_order_tree(bool print) {
@@ -514,30 +541,55 @@ void test_vector(bool print) {
 	if (print) PRINTLINE("FINISHED testing vectors");
 }
 
+void test_bitgrid(bool print) {
+	sal::Bitgrid bg {5,7};
+	if (print) {bg.print(); cout << endl;}
+
+	// set a horizontal line
+	bg.set(1,3);
+	bg.set(2,3);
+	bg.set(3,3);
+	bg.set(4,3);
+	if (print) {bg.print(); cout << endl;}
+
+	// set a vertical line
+	bg.set(0,2);
+	bg.set(0,3);
+	bg.set(0,4);
+	if (print) {bg.print(); cout << endl;}
+
+	if (bg.find(1,4,0,2)) PRINTLINE("FAILED...Bitgrid find (false positive)");
+	if (!bg.find(0,1,0,2)) PRINTLINE("FAILED...Bitgrid find (failed to find)");
+
+	bg.clear(0,2);
+	if (bg.find(0,1,0,2)) PRINTLINE("FAILED...Bitgrid clear (can still find cleared bit)");
+}
+
 int main(int argc, char** argv) {
 	bool print {false};
 	// give p or -p argument for printing out results
 	if (argc > 1 && (argv[1][0] == 'p' || argv[1][1] == 'p')) print = true; 
-	test_heap(print);
+	// test_heap(print);
 	test_tree(print);
-	test_order_tree(print);
-	test_interval_set(print);
-	test_plane_set(print);
-	test_treap(print);
-	test_list(print);
-	test_undirected_graph(print);
-	test_directed_graph(print);
-	test_matrix(print);
-	test_bfs(print);
-	test_dfs(print);
-	test_topological_sort(print);
-	test_transpose(print);
-	test_strongly_connected(print);
-	test_mst(print);
-	test_bellman_ford(print);
-	test_shortest_dag(print);
-	test_dijkstra(print);
-	test_difference_constraint(print);
-	test_adjacency_matrix(print);
-	test_vector(print);
+	// test_order_tree(print);
+	// test_interval_set(print);
+	// test_plane_set(print);
+	// test_treap(print);
+	// test_list(print);
+	// test_undirected_graph(print);
+	// test_directed_graph(print);
+	// test_matrix(print);
+	// test_bfs(print);
+	// test_dfs(print);
+	// test_topological_sort(print);
+	// test_transpose(print);
+	// test_strongly_connected(print);
+	// test_mst(print);
+	// test_bellman_ford(print);
+	// test_shortest_dag(print);
+	// test_dijkstra(print);
+	// test_difference_constraint(print);
+	// test_adjacency_matrix(print);
+	// test_vector(print);
+	// test_bitgrid(print);
 }

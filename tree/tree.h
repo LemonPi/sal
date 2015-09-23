@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
 #include <iomanip>
+#include <sstream>
+#include <string>
 #include <initializer_list>
 
 namespace sal {
@@ -50,6 +52,21 @@ template <typename Node>
 const Node* tree_max(const Node* start) {
 	while (start->right != Node::nil) start = start->right;
 	return start;
+}
+
+template <typename Node>
+int min_height(const Node* root) {
+	if (!root) return 0;
+	return 1 + std::min(min_height(root->left), min_height(root->right));
+}
+template <typename Node>
+int max_height(const Node* root) {
+	if (!root) return 0;
+	return 1 + std::max(max_height(root->left), min_height(root->right));
+}
+template <typename Node>
+bool is_balanced(const Node* root) {
+	return (max_height(root) - min_height(root) <= 1);
 }
 
 
@@ -335,6 +352,7 @@ protected:
 					if (node == parent->right) {
 						node = parent;
 						rotate_left(node);
+						parent = node->parent;
 					}
 					// case 2 reduces to case 3
 					parent->color = Color::BLACK;
@@ -347,17 +365,22 @@ protected:
 			else {
 				// uncle is now the other child of grandparent
 				NP uncle {parent->parent->left};
+				// case 1, simply recolor so parents and uncle are black while grandparent red
 				if (uncle->color == Color::RED) {
 					parent->color = Color::BLACK;
 					uncle->color = Color::BLACK;
 					parent->parent->color = Color::RED;
+					// now violation (if any) is in grandparent layer
 					node = parent->parent;	
 				}
+				// case 2 and 3, uncle is black, cannot recolor layers
 				else { 
 					if (node == parent->left) {
 						node = parent;
 						rotate_right(node);
+						parent = node->parent;
 					}
+					// case 2 reduces to case 3
 					parent->color = Color::BLACK;
 					parent->parent->color = Color::RED;
 					rotate_left(parent->parent);
@@ -515,7 +538,7 @@ protected:
 		int right_bh {blackheight(right)};
 		if (left_bh != 0 && right_bh != 0 && left_bh != right_bh) {
 			// check for 0 first to pardon carry-on error
-			std::cout << "Different black height\n";
+			std::cout << "Different black height: l " << left_bh << " r " << right_bh << "\n";
 			return 0;
 		}
 
@@ -624,6 +647,16 @@ struct Basic_node {
 	Color color;
 	Basic_node() : color{Color::BLACK} {}	// sentinel construction
 	Basic_node(T val) : parent{nil}, left{nil}, right{nil}, key{val}, color{Color::RED} {}
+
+	std::string to_string() const {
+		if (this == nil) return "nil";
+		std::ostringstream ss;
+		ss << key;
+
+		if (color == Color::RED) ss << " R";
+		else ss << " B";
+		return ss.str();
+	}
 };
 
 template <typename T>

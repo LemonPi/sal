@@ -76,6 +76,15 @@ public:
 	// don't try to iterator through planes, just use end to check against find
 	iterator end() 				{return iterator{element_node::nil};}
 	const_iterator end() const 	{return iterator{element_node::nil};}
+
+
+	void print() const {
+		// for each x range, print out its y ranges
+		sal::inorder_walk(root, [](const Node* x_range){
+			x_range->inorder_walk([&](const element_node* y_range){
+				std::cout << '(' << x_range->key << ',' << x_range->high << ',' << y_range->key << ',' << y_range->high << ")\n";
+			});});
+	}
 };
 
 // T is supposed to be easy to copy
@@ -100,6 +109,10 @@ struct Planetreap_node {
 	iterator find(T low, T high) {return y_range.find(low, high);}
 	const_iterator find(T low, T high) const {return y_range.find(low, high);}
 	void insert(T y_low, T y_high) {y_range.insert(y_low, y_high);}
+	template <typename Op>
+	void inorder_walk(Op&& op) {y_range.inorder_walk(std::forward<Op>(op));}
+	template <typename Op>
+	void inorder_walk(Op&& op) const {y_range.inorder_walk(std::forward<Op>(op));}
 	// convert to interval
 	operator Interval<T>() {return {key, high};}
 };

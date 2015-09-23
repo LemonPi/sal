@@ -211,7 +211,7 @@ void profile_plane_set() {
 	std::vector<Rect> lines;
 	static constexpr int half_width = 5;
 	// the bounding box size of the plane also impacts performance (significant in lookup)
-	for (int i = 0; i < test_size; ++i) {
+	for (int i = 0; i < test_size/100; ++i) {
 		int x_center {randint(test_size / 100)};
 		int y_center {randint(test_size / 100)};
 		// odd and even decide whether line will be vertical or horizontal
@@ -225,6 +225,18 @@ void profile_plane_set() {
 		planes.insert(line.xl, line.xh, line.yl, line.yh);
 	}
 	cout << "random insert: " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (const auto& line : lines) {
+		planes.find(line.xl, line.xh, line.yl, line.yh);	// every one is a hit
+	}
+	cout << "random queries (always hit): " << time.tonow() / 1000.0 << endl;
+
+	time.restart();
+	for (const auto& line : lines) {
+		planes.find(line.yl, line.yh, line.xl, line.xh);	// hits will be very rare
+	}
+	cout << "random queries (rare hit): " << time.tonow() / 1000.0 << endl;
 }
 
 int main() {
