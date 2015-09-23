@@ -1,0 +1,1 @@
+em++ -std=c++11 -O3 --memory-init-file 0 webbinding.cpp --bind -o algotest.js
