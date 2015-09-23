@@ -6,6 +6,7 @@ A c++ header only library containing efficient algorithms and data structures im
 Simplicity here refers to how close the implementation matches the core concepts of each algorithm,
 rather than the triviality of each algorithm.
 
+For detailed documentation and some analysis, see [my portfolio](http://johnsonzhong.me/sal)
 
 <br>
 Features
