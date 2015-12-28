@@ -61,6 +61,7 @@ private:
 	// runs in O(n) time, produces max heap from unordered input array
 	void build_heap() {
 		// second half of elems are leaves, 1 elem is maxheap by default
+		// n(1) + n/2 + n/4 + ... = 2n
 		for (size_t i = elems.size() >> 1; i != 0; --i) 
 			sift_down(i);
 	}

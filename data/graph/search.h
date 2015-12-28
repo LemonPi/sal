@@ -189,7 +189,7 @@ DPM<Graph> dfs(const Graph& g, Visitor&& visitor = DFS_visitor{}) {
 			else visitor.forward_or_cross_edge(*adj, g);
 		}
 		if (fully_explored) {
-			exploring.pop_back();
+			exploring.pop_back();	// current element guarenteed to be at the back right now
 			if (property[cur].finish == 0) {// default value
 				property[cur].finish = ++explore_time;
 				visitor.finish_vertex(cur, g);

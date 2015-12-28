@@ -247,6 +247,14 @@ public:
 		for (const auto& v : l) insert(v);
 	}
 
+	// insert by copy
+	void insert(Node node) {
+		NP node_copy = new Node(node);
+		treap_insert(node_copy, propagate_max_down<Node>);
+	}
+	void insert(NP node) {
+		treap_insert(node, propagate_max_down<Node>);
+	}
 	void insert(T low, T high) {
 		NP node {new Node(low, high)};
 		treap_insert(node, propagate_max_down<Node>);

@@ -92,7 +92,7 @@ struct DJ_visitor {
 			    typename Property_map::mapped_type::edge_type>& edge) {
 		// haven't explored yet and the cost is less
 		if (explored.find(edge.dest()) == explored.end() && 
-			edge.weight() < property[edge.dest()].distance + edge.weight()) {
+			property[edge.source()].distance + edge.weight() < property[edge.dest()].distance) {
 
 			property[edge.dest()].distance = property[edge.source()].distance + edge.weight();
 			property[edge.dest()].parent = edge.source();

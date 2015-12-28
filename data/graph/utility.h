@@ -206,7 +206,7 @@ SPM<Graph> min_span_tree(const Graph& g, MST_visitor&& visitor = {}) {
 	// batch insert is O(n) rather than O(nlgn) of inserting each sequentially
 
 	while (!exploring.empty()) {
-		V u {exploring.extract_top()};
+		V u {exploring.extract_top()};	// eventually all vertices extracted
 		explored.insert(u);
 		// for each adjacent vertex
 		auto edges = g.adjacent(u);
