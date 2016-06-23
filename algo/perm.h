@@ -96,7 +96,7 @@ template <typename T>
 size_t count_combos(const vector<T>& vals, T sum) {
     // create table to avoid recomputation of same subproblem
     // table stores # of solutions for certain sum (as index)
-    vector<int> table(sum + 1, 0);
+    vector<size_t> table(sum + 1, 0);
 
     table[0] = 1;  // base case of 1 solution
 
