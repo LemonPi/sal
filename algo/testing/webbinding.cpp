@@ -11,7 +11,7 @@ std::string algo_str(std::string input) {
 	std::vector<std::string> args {ssplit(input, ' ')};
 	// reset output
 	out = std::ostringstream();
-	algotest(args);
+	sal::algotest(args);
 	return out.str();
 }
 

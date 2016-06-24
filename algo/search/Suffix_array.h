@@ -88,7 +88,7 @@ class Suffix_array {
     friend class Suffix_cmp;
 
 public:
-    Suffix_array(const Sequence& text) : s{text} {build(); build_lcp();}
+    Suffix_array(const Sequence& text) : s(text) {build(); build_lcp();}
 
     size_t size() const {return sa.size();}
     // reference to original text

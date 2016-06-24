@@ -4,6 +4,20 @@
 
 namespace sal {
 
+std::string squish_whitespace(const std::string& s) {
+    std::stringstream ss;
+    for (size_t i = 0; i < s.size(); ++i) {
+        ss << s[i];
+        if (std::isspace(s[i])) {
+            while (std::isspace(s[i])) {
+                ++i;
+            }
+            --i;
+        }
+    }
+    return ss.str();
+}
+
 // Levenshtein distance (edit actions include insertion, deletion, and substitution)
 // very similar to longest common subsequence
 template <typename Sequence>

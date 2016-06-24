@@ -3,6 +3,9 @@ contact: johnsonzhong@hotmail.ca | johnsonzhong.me
 ------------------------
 numerical functions
 
+mean(begin, end) 	-> mean across a sequence
+variance(begin, end)-> variance across a sequence
+
 modular_pow(base, exp, mod)   -> base^exp % mod, O(lgexp) operations
 int_pow(base, exp) 		      -> base^exp
 
@@ -46,7 +49,97 @@ catalan(n) 		 -> nth catalan number 1(0), 1(1), 2(2), 5(3), 14(4), 42(5), 132(6)
 
 namespace sal {
 
-using namespace std;
+/**
+ * Statistics for a sequence for arithmetic value types.
+ */
+template <typename Iter, bool simpleValueType>
+struct SequenceStatsImpl {
+    static double mean(Iter begin, Iter end) {
+        if (begin == end) {
+            return 0;
+        }
+        double sum = 0;
+        for (Iter current = begin; current != end; ++current) {
+            sum += (*current);
+        }
+        return sum / std::distance(begin, end);
+    }
+
+    static double variance(Iter begin, Iter end) {
+        if (begin == end) {
+            return 0;
+        }
+        double m     = mean(begin, end);
+        double sqSum = 0;
+
+        for (Iter current = begin; current != end; ++current) {
+            sqSum += (*current) * (*current);
+        }
+        return sqSum / std::distance(begin, end) - m * m;
+    }
+};
+
+/**
+ * Statistics implementation for non-arithmetic value types.
+ * For now, assume the value type has ->second to point to arithmetic value.
+ */
+template <typename Iter>
+struct SequenceStatsImpl<Iter, false> {
+    static double mean(Iter begin, Iter end) {
+        if (begin == end) {
+            return 0;
+        }
+        double sum = 0;
+        for (Iter current = begin; current != end; ++current) {
+            sum += current->second;
+        }
+        return sum / std::distance(begin, end);
+    }
+
+    static double variance(Iter begin, Iter end) {
+        if (begin == end) {
+            return 0;
+        }
+        double m     = mean(begin, end);
+        double sqSum = 0;
+
+        for (Iter current = begin; current != end; ++current) {
+            sqSum += current->second * current->second;
+        }
+        return sqSum / std::distance(begin, end) - m * m;
+    }
+};
+
+/**
+ * Find the mean across a sequence
+ *
+ * @param[in] begin Start of a sequence
+ * @param[in] end One past the last element of a sequence
+ */
+template <typename Iter>
+double mean(Iter begin, Iter end) {
+    // call an implementation based on the type that we get by dereferencing iterator
+    return SequenceStatsImpl<
+        Iter,
+        std::is_arithmetic<typename std::iterator_traits<Iter>::value_type>::value>::mean(begin,
+                                                                                          end);
+}
+
+/**
+ * Find the variance across a sequence
+ *
+ * @param[in] begin Start of a sequence
+ * @param[in] end One past the last element of a sequence
+ */
+template <typename Iter>
+double variance(Iter begin, Iter end) {
+    // call an implementation based on the type that we get by dereferencing iterator
+    return SequenceStatsImpl<
+        Iter,
+        std::is_arithmetic<typename std::iterator_traits<Iter>::value_type>::value>::variance(begin,
+                                                                                              end);
+}
+
 
 // Θ(lg(exponent)) complexity
 int modular_pow(int base, int exponent, int modulus) {
@@ -174,7 +267,7 @@ unsigned int gcd(int a, int b) { // binary implementation
 	do {
 		while ((b & 1) == 0) b >>= 1;	// remove all powers of 2
 		// both odd now
-		if (b < a) swap(a, b);	// keep a < b
+		if (b < a) std::swap(a, b);	// keep a < b
 		b -= a;
 	} while (b != 0);
 

@@ -18,15 +18,15 @@
 #include "../string.h"
 #include "../utility.h"
 
-using namespace std;
-using namespace sal;
 
-extern ostringstream out;
+extern std::ostringstream out;
+
+namespace sal {
 
 static int list_num{1};
 static int list_size{1};
 static int range{20000};
-static string fname{"testdata.txt"};
+static std::string fname{"testdata.txt"};
 
 enum Function_index {
     RANDGEN = 0,
@@ -43,6 +43,8 @@ enum Function_index {
     GCD,
     LCM,
     FIBONACCI,
+    MEAN,
+    VARIANCE,
     INF_PRIME,
     NTH_PRIME,
     IS_PRIME,
@@ -69,12 +71,12 @@ enum Function_index {
     EXPERIMENT
 };
 
-const vector<pair<string, string>> names_in_order{
+const std::vector<pair<std::string, std::string>> names_in_order{
     {"0", "NUM SIZE RANGE generate random numbers into testdata.txt"},
     {"1", "NUM SIZE RANGE generate nearly sorted numbers (off by at most range) into testdata.txt"},
     {"select", "NUM ... INDEX  quickselect of ith smallest from unsorted sequence"},
     {"bin_search", "               binary search"},
-    {"sub_match", "WORD WORD      KMP substring finding"},
+    {"sub_match", "WORD WORD      KMP substd::string finding"},
     {"intersection", "WORD WORD..    intersection"},
     {"perm", "WORD INDEX     all permutations of a word"},
     {"allperms", "WORD           all permutations of a word"},
@@ -84,6 +86,8 @@ const vector<pair<string, string>> names_in_order{
     {"gcd", "NUM NUM        greatest common demonimator"},
     {"lcm", "NUM NUM..      lowest common multiple using prime factorization"},
     {"fibonacci", "NTH            nth-fibonacci term with matrices"},
+    {"mean", "SEQ            mean across a sequence"},
+    {"variance", "SEQ            variance across a sequence"},
 
     {"sieve.next_prime..", "NO ARG         infinite prime generation"},
     {"sieve.nth_prime", "NTH            nth prime"},
@@ -105,15 +109,15 @@ const vector<pair<string, string>> names_in_order{
     {"sort", "               standard C++ library sort"},
 
     {"levenshtein", "WORD WORD      Levenshtein distance with dynamic programming"},
-    {"sa.lc_substr", "SEQ SUBSTR     lc_substring using a suffix array"},
-    {"lc_substr", "SEQ SUBSTR     lc_substring using a suffix array (wrapper)"},
+    {"sa.lc_substr", "SEQ SUBSTR     LC_SUBSTRING using a suffix array"},
+    {"lc_substr", "SEQ SUBSTR     LC_SUBSTRING using a suffix array (wrapper)"},
     {"lc_subseq", "SEQ SUBSEQ     lc_subsequence with dynamic programming"},
     {"lc_subseq_len", "SEQ SUBSEQ     lc_subsequence length"},
 
     {"count_inversions", "SEQ            count number of inversions in sequence in O(nlgn)"},
     {"experiment", "               experimental algorithm"}};
 
-const map<string, Function_index> algonames{{"0", RANDGEN},
+const std::map<std::string, Function_index> algonames{{"0", RANDGEN},
                                             {"1", SHUFGEN},
                                             {"select", SELECT},
                                             {"bin_search", BIN_SEARCH},
@@ -127,6 +131,8 @@ const map<string, Function_index> algonames{{"0", RANDGEN},
                                             {"gcd", GCD},
                                             {"lcm", LCM},
                                             {"fibonacci", FIBONACCI},
+                                            {"mean", MEAN},
+                                            {"variance", VARIANCE},
 
                                             {"sieve.next_prime..", INF_PRIME},
                                             {"sieve.nth_prime", NTH_PRIME},
@@ -160,20 +166,20 @@ const map<string, Function_index> algonames{{"0", RANDGEN},
 void listalgos() {
     out << "Add -p as last argument to print out sample result\n";
     for (auto& algo : names_in_order)
-        out << setfill('-') << setw(20) << algo.first << ": " << algo.second << endl;
+        out << setfill('-') << setw(20) << algo.first << ": " << algo.second << std::endl;
 }
 
 template <typename T, typename Op>
-vector<vector<T>> data_store(const string& fname, Op vlist_gen, int l_num = list_num,
+std::vector<std::vector<T>> data_store(const std::string& fname, Op vlist_gen, int l_num = list_num,
                              int l_size = list_size, int r = range) {
     ofstream f{fname};
-    f << l_num << ' ' << l_size << ' ' << r << endl;
-    vector<vector<T>> vlist{vlist_gen(l_num, l_size, r)};
+    f << l_num << ' ' << l_size << ' ' << r << std::endl;
+    std::vector<std::vector<T>> vlist{vlist_gen(l_num, l_size, r)};
     for (auto v : vlist) print(v, f);
     return vlist;
 }
 
-void load_data(vector<vector<int>>& vlist) {
+void load_data(std::vector<std::vector<int>>& vlist) {
     vlist.reserve(list_num);
     try {  // try ints
         vlist = ftovec<int>(fname, list_num, list_size, range);
@@ -185,7 +191,7 @@ void load_data(vector<vector<int>>& vlist) {
 int algotest(std::vector<std::string> args) {
     if (args.size() < 1 || args[0].empty() || args[0][0] == '\n' || args[0][0] == 'h' ||
         args[0] == "help") {
-        out << "Proper use expects at least a string argument specifying which algorithm to test\n";
+        out << "Proper use expects at least a std::string argument specifying which algorithm to test\n";
         listalgos();
         return 1;
     }
@@ -193,7 +199,7 @@ int algotest(std::vector<std::string> args) {
     // out << "args(" << args.size() << "):";
     // print(args,out);
 
-    string name(args[0]);
+    std::string name(args[0]);
 
     bool to_print{args.back().size() > 1 && args.back()[0] == '-' && args.back()[1] == 'p'};
     // not a legitimate argument
@@ -202,7 +208,7 @@ int algotest(std::vector<std::string> args) {
     auto algopair = algonames.find(name);
     // incorrect entry, suggest the closest entry (by Levenshtein distance)
     if (algopair == algonames.end()) {
-        string suggested_name;
+        std::string suggested_name;
         size_t lowest_distance{POS_INF(size_t)};
         for (auto algo = algonames.begin(); algo != algonames.end(); ++algo) {
             size_t cur_distance{levenshtein(name, algo->first)};
@@ -213,11 +219,11 @@ int algotest(std::vector<std::string> args) {
             }
         }
         suggested_name = algopair->first;
-        out << "did you mean: " << suggested_name << endl;
+        out << "did you mean: " << suggested_name << std::endl;
         return 2;
     }
 
-    vector<vector<int>> vlist;
+    std::vector<std::vector<int>> vlist;
     Function_index algo_index{algopair->second};
 
     Timer time;
@@ -242,7 +248,7 @@ int algotest(std::vector<std::string> args) {
                 out << "Number sequence needs to be longer and followed by an index (1 = "
                        "smallest)\n";
             else {
-                vector<long> nums;
+                std::vector<long> nums;
                 long i{tol(args.back())};
                 args.pop_back();
                 for (size_t n = 1; n < args.size(); ++n) nums.push_back(tol(args[n]));
@@ -268,25 +274,25 @@ int algotest(std::vector<std::string> args) {
             else {
                 auto i = sub_match(args[1], args[2]);
                 if (i != args[1].end())
-                    out << "matched at position " << i - args[1].begin() << endl;
+                    out << "matched at position " << i - args[1].begin() << std::endl;
                 else
-                    out << args[2] << " not found in " << args[1] << endl;
+                    out << args[2] << " not found in " << args[1] << std::endl;
             }
             break;
-        // intersection of 1 or more containers (strings in test)
+        // intersection of 1 or more containers (std::strings in test)
         case INTERSECTION: {
-            set<string> s;
-            for (size_t i = 1; i < args.size(); ++i) s.insert(string(args[i]));
+            set<std::string> s;
+            for (size_t i = 1; i < args.size(); ++i) s.insert(std::string(args[i]));
             print(intersection(s), out);
             break;
         }
-        // generate all permutations of string
+        // generate all permutations of std::string
         case PERM:
             if (args.size() < 3)
                 out << "Need to specify word and permutation index\n";
             else {
                 perm(args[1], tol(args[2]));
-                out << args[1] << endl;
+                out << args[1] << std::endl;
             }
             break;
         case ALLPERMS:
@@ -315,18 +321,18 @@ int algotest(std::vector<std::string> args) {
             } else
                 print(factorize_rough(tol(args[2])), out);
             break;
-        // substring finding
+        // substd::string finding
         case TOTIENT:
             if (args.size() < 2)
                 out << "Totient takes 1 number and returns # of coprime ints under it\n";
             else
-                out << totient(tol(args[1])) << endl;
+                out << totient(tol(args[1])) << std::endl;
             break;
         case GCD:
             if (args.size() < 3)
                 out << "GCD takes 2 numbers\n";
             else
-                out << gcd(tol(args[1]), tol(args[2])) << endl;
+                out << gcd(tol(args[1]), tol(args[2])) << std::endl;
             break;
         case LCM:
             if (args.size() < 3)
@@ -334,15 +340,32 @@ int algotest(std::vector<std::string> args) {
             else {
                 std::vector<long> nums;
                 for (auto s = args.begin() + 1; s != args.end(); ++s) nums.push_back(tol(*s));
-                out << lcm(nums.begin(), nums.end()) << endl;
+                out << lcm(nums.begin(), nums.end()) << std::endl;
             }
             break;
         case FIBONACCI:  // nth fibonacci term
             if (args.size() < 2)
                 out << "Need to specify n\n";
             else
-                out << fibonacci<unsigned long long>(tol(args[1])) << endl;
+                out << fibonacci<unsigned long long>(tol(args[1])) << std::endl;
             break;
+        case MEAN:
+        case VARIANCE: {
+            std::vector<double> elems;
+            for (size_t i = 1; i < args.size(); ++i) {
+                auto num = std::stod(args[i]);
+                elems.push_back(num);
+            }
+            if (algo_index == MEAN) {
+                out << "mean " << mean(elems.begin(), elems.end()) << std::endl;
+            }
+            else if (algo_index == VARIANCE) {
+                out << "variance " << variance(elems.begin(), elems.end()) << std::endl;
+            }    
+
+            break;
+        }
+
         // by prime number theorem (PNT) count is ~ n/ln(n) and nth prime is ~ nln(n) -> gap is
         // limited by n < p < 2n or n < p < 1.2n for n > 100
         case INF_PRIME:
@@ -450,31 +473,31 @@ int algotest(std::vector<std::string> args) {
             if (args.size() < 3)
                 out << "Need 2 words to compare\n";
             else if (algo_index == LEVENSHTEIN)
-                out << "levenshtein dist: " << levenshtein(args[1], args[2]) << endl;
+                out << "levenshtein dist: " << levenshtein(args[1], args[2]) << std::endl;
             else if (algo_index == SA_LC_SUBSTRING) {
                 args[1] += '$';
                 append(args[1], args[2]);
                 Suffix_array<> sa{args[1]};
-                out << "longest common substring: " << lc_substr(args[1], args[2]) << endl;
+                out << "longest common substd::string: " << lc_substr(args[1], args[2]) << std::endl;
                 if (to_print) sa.print();
             } else if (algo_index == LC_SUBSTRING)
-                out << "longest common substring: " << lc_substr(args[1], args[2]) << endl;
+                out << "longest common substd::string: " << lc_substr(args[1], args[2]) << std::endl;
             else if (algo_index == LC_SUBSEQ)
-                out << "longest common subsequence: " << lc_subseq(args[1], args[2]) << endl;
+                out << "longest common subsequence: " << lc_subseq(args[1], args[2]) << std::endl;
             else if (algo_index == LC_SUBSEQ_LEN)
                 out << "longest common subsequence length: " << lc_subseq_len(args[1], args[2])
-                    << endl;
+                    << std::endl;
         }
         case CNT_INV: {
-            vector<int> elems;
+            std::vector<int> elems;
             for (size_t i = 1; i < args.size(); ++i) {
                 int num = tol(args[i]);
                 elems.push_back(num);
             }
-            out << "number of inversions: " << count_inversions(elems.begin(), elems.end()) << endl;
+            out << "number of inversions: " << count_inversions(elems.begin(), elems.end()) << std::endl;
         }
         case EXPERIMENT: {  // testing for new algorithms
-            vector<string> test{ftostr(fname)};
+            std::vector<std::string> test{ftostr(fname)};
             sort(test.begin(), test.end());
             if (to_print) print(test, out);
             break;
@@ -490,4 +513,6 @@ int algotest(std::vector<std::string> args) {
         << ltrim(names_in_order[algo_index].second) << ")\n";
 
     return 0;
+}
+
 }
