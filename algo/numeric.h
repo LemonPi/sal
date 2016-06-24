@@ -3,6 +3,9 @@ contact: johnsonzhong@hotmail.ca | johnsonzhong.me
 ------------------------
 numerical functions
 
+Scale(minIn, maxIn, minOut, maxOut) -> create a scale to allow range mapping
+	operator(in) 	-> map in to out
+
 mean(begin, end) 	-> mean across a sequence
 variance(begin, end)-> variance across a sequence
 
@@ -48,6 +51,31 @@ catalan(n) 		 -> nth catalan number 1(0), 1(1), 2(2), 5(3), 14(4), 42(5), 132(6)
 #include "prime.h"	// for totient
 
 namespace sal {
+
+template <typename InType, typename OutType>
+class Scale {
+  public:
+    Scale(InType minIn, InType maxIn, OutType minOut, OutType maxOut)
+        : _minIn(minIn),
+          _maxIn(maxIn),
+          _rangeIn(maxIn - minIn),
+          _minOut(minOut),
+          _maxOut(maxOut),
+          _rangeOut(maxOut - minOut) {
+    }
+
+    OutType operator()(InType in) {
+        return (_rangeOut * (in - _minIn) / _rangeIn) + _minOut;
+    }
+
+  private:
+    InType _minIn;
+    InType _maxIn;
+    InType _rangeIn;
+    OutType _minOut;
+    OutType _maxOut;
+    OutType _rangeOut;
+};
 
 /**
  * Statistics for a sequence for arithmetic value types.
