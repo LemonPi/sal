@@ -55,19 +55,23 @@ namespace sal {
 template <typename InType, typename OutType>
 class Scale {
   public:
-    Scale(InType minIn, InType maxIn, OutType minOut, OutType maxOut)
-        : _minIn(minIn),
-          _maxIn(maxIn),
-          _rangeIn(maxIn - minIn),
-          _minOut(minOut),
-          _maxOut(maxOut),
-          _rangeOut(maxOut - minOut) {
+    Scale(InType minIn, InType maxIn, OutType minOut, OutType maxOut) {
+        setRange(minIn, maxIn, minOut, maxOut);
     }
 
     OutType operator()(InType in) {
         return (_rangeOut * (in - _minIn) / _rangeIn) + _minOut;
     }
 
+    void setRange(InType minIn, InType maxIn, OutType minOut, OutType maxOut) {
+        _minIn    = minIn;
+        _maxIn    = maxIn;
+        _rangeIn  = maxIn - minIn;
+        _minOut   = minOut;
+        _maxOut   = maxOut;
+        _rangeOut = maxOut - minOut;
+    }
+    
   private:
     InType _minIn;
     InType _maxIn;
