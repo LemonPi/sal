@@ -510,7 +510,7 @@ int algotest(std::vector<std::string> args) {
 
     out << "after: " << list_num << " lists with " << list_size << " elements: " << setw(10)
         << done_time << " us " << setw(10) << done_time / 1000 << " ms  ("
-        << ltrim(names_in_order[algo_index].second) << ")\n";
+        << squish_whitespace(ltrim(names_in_order[algo_index].second)) << ")\n";
 
     return 0;
 }
