@@ -203,7 +203,7 @@ T fibonacci(size_t n) {
 }
 
 size_t choose(size_t n, size_t k) {
-    if (n == k) return 1;
+    if (n == k || k == 0) return 1;
     // (n, k) = (n, n - k) allows a lower number of loops
     if (k > n - k) k = n - k;
 
