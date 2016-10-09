@@ -19,10 +19,10 @@ count_combos(values, sum)            -> number of ways to reach sum by combining
 #include <set>
 #include <string>
 #include <vector>
+#include <limits>
 
 namespace sal {
 
-using namespace std;
 using large_int = unsigned long long;
 
 large_int fact_int(int i) {
@@ -35,13 +35,13 @@ large_int fact_int(int i) {
 template <typename Indexable>
 void perm(Indexable& s, large_int k) {  // k is from 0 to s.size()! - 1
     for (unsigned j = 1; j < s.size(); ++j) {
-        swap(s[k % (j + 1)], s[j]);
+        std::swap(s[k % (j + 1)], s[j]);
         k = k / (j + 1);
     }
 }
 
 template <typename Indexable>
-vector<Indexable> allperms(const Indexable& s) {
+std::vector<Indexable> allperms(const Indexable& s) {
     large_int max_perm{fact_int(s.size())};
     std::vector<Indexable> res;
     for (large_int k = 0; k < max_perm; ++k) {
@@ -54,7 +54,7 @@ vector<Indexable> allperms(const Indexable& s) {
 }
 
 template <typename Indexable>
-set<Indexable> allperms_distinct(const Indexable& s) {
+std::set<Indexable> allperms_distinct(const Indexable& s) {
     large_int max_perm{fact_int(s.size())};
     std::set<Indexable> res;
     for (large_int k = 0; k < max_perm; ++k) {
@@ -67,41 +67,54 @@ set<Indexable> allperms_distinct(const Indexable& s) {
 
 // combinations
 template <typename Iter, typename Op>
-set<typename Iter::value_type> combine(Iter start, Iter end, Op op) {
-    set<int> combos;
+std::set<typename Iter::value_type> combine(Iter start, Iter end, Op op) {
+    std::set<int> combos;
     for (; start != end; ++start)
         for (auto j = start; j != end; ++j) combos.insert(op(*start, *j));
     return combos;
 }
 template <typename Container, typename Op>
-set<typename Container::value_type> combine(Container& c, Op op) {
+std::set<typename Container::value_type> combine(Container& c, Op op) {
     return combine(c.begin(), c.end(), op);
 }
 
 template <typename Iter, typename Op, typename Pred>
-set<typename Iter::value_type> combine(Iter start, Iter end, Op op, Pred pred) {
-    set<int> combos;
+std::set<typename Iter::value_type> combine(Iter start, Iter end, Op op, Pred pred) {
+    std::set<int> combos;
     for (; start != end; ++start)
         for (auto j = start; j != end; ++j)
             if (pred(*start, *j)) combos.insert(op(*start, *j));
     return combos;
 }
 template <typename Container, typename Op, typename Pred>
-set<typename Container::value_type> combine(Container& c, Op op, Pred pred) {
+std::set<typename Container::value_type> combine(Container& c, Op op, Pred pred) {
     return combine(c.begin(), c.end(), op, pred);
 }
 
-// count number of ways to generate sum using num_vals elements from vals
+// count number of ways to generate sum using elements from vals
 template <typename T>
-size_t count_combos(const vector<T>& vals, T sum) {
+size_t count_combos(const std::vector<T>& vals, T sum) {
     // create table to avoid recomputation of same subproblem
     // table stores # of solutions for certain sum (as index)
-    vector<size_t> table(sum + 1, 0);
+    std::vector<size_t> table(sum + 1, 0);
 
     table[0] = 1;  // base case of 1 solution
 
     for (const T& value_unit : vals)
         for (T val = value_unit; val <= sum; ++val) table[val] += table[val - value_unit];
+
+    return table[sum];
+}
+
+// count the minimum number of ways to generate sum using value from vals
+template <typename T>
+size_t min_combos(const std::vector<T>& vals, T sum) {
+    std::vector<size_t> table(sum + 1, std::numeric_limits<size_t>::max());
+
+    table[0] = 0;
+
+    for (const T& value_unit : vals)
+        for (T val = value_unit; val <= sum; ++val) table[val] = std::min(table[val], table[val - value_unit]+1);
 
     return table[sum];
 }
