@@ -196,10 +196,31 @@ int int_pow(int base, int exponent) {
 
 // returns nth fibonacci number in Θ(lg(n))` time using matrix exponentiation
 template <typename T>
-T fibonacci(size_t n) {
+T fibonacci(size_t n, T f1 = 1, T f0 = 0) {
     Matrix<T> f{{1, 1}, {1, 0}};
-    f.pow(n);
-    return f.get(0, 1);  // either upper right or lower left is Fib_n
+    f.pow(n - 1);
+    return f.get(0, 0) * f1 + f.get(0, 1) * f0;
+}
+
+template <typename T>
+T general_fibonacci(T a, T b, size_t n) {
+    std::unordered_map<size_t, T> fibValues{0 : a, 1 : b};
+    return fib_helper(n, fibValues);
+}
+template <typename T>
+T fib_helper(size_t n, std::unordered_map<size_t, T>& fibValues) {
+    if (fibValues.find(n) == fibValues.end()) {
+        if (n % 2 == 1) {
+            size_t k = (n - 1) / 2;
+            fibValues[n] = fib_helper(k + 1, fibValues) * fib_helper(k + 1, fibValues) +
+                           fib_helper(k, fibValues) * fib_helper(k, fibValues);
+        } else {
+            size_t k = n / 2;
+            fibValues[n] = fib_helper(k, fibValues) *
+                           (2 * fib_helper(k + 1, fibValues) - fib_helper(k, fibValues));
+        }
+    }
+    return fibValues[n];
 }
 
 size_t choose(size_t n, size_t k) {
